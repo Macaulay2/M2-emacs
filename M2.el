@@ -1,5 +1,8 @@
 ;;; M2.el --- Major mode for editing Macaulay2 source core -*- lexical-binding: t -*-
+;; Version: 1.1
 ;; Keywords: languages Macaulay2
+;; URL: https://github.com/Macaulay2/M2-emacs
+;; Package-Requires: ((emacs "24.1"))
 
 ;;; Commentary:
 ;; Macaulay2 makes no attempt to wrap long output lines, so we provide
@@ -30,10 +33,6 @@
   "Major mode for editing Macaulay2 source code.\n\n\\{M2-mode-map}" (M2-common))
 
 ;;;###autoload
-(defun m2-mode nil
-  "Major mode for editing Macaulay2 source code, name in lower case" (M2-mode))
-
-;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
 
 (defcustom M2-indent-level 4
@@ -54,10 +53,6 @@
   (set (make-local-variable 'comint-dynamic-complete-functions)
        '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)))
 
-;;;###autoload
-(defun m2-comint-mode nil
-  "Macaulay2 command interpreter mode, name in lower case" (M2-comint-mode))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -72,8 +67,7 @@
   (set (make-local-variable 'transient-mark-mode) t)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
-  (setq case-fold-search nil)
-  )
+  (setq case-fold-search nil))
 
 ;; key bindings
 
@@ -91,13 +85,13 @@
 (define-key M2-comint-mode-map [ (control C) < ] 'M2-jog-left)
 (define-key M2-comint-mode-map [ f4 ] 'M2-jog-right)
 (define-key M2-comint-mode-map [ (control C) > ] 'M2-jog-right)
-(define-key M2-comint-mode-map [ f5 ] 'M2-toggle-truncate-lines)
+;(define-key M2-comint-mode-map [ f5 ] 'M2-toggle-truncate-lines)
 (define-key M2-comint-mode-map [ (control C) ? ] 'M2-toggle-truncate-lines)
-(define-key M2-comint-mode-map [ f6 ] 'scroll-left)
+;(define-key M2-comint-mode-map [ f6 ] 'scroll-left)
 (define-key M2-comint-mode-map [ (control C) l ] 'scroll-left)
-(define-key M2-comint-mode-map [ f7 ] 'scroll-right)
+;(define-key M2-comint-mode-map [ f7 ] 'scroll-right)
 (define-key M2-comint-mode-map [ (control C) r ] 'scroll-right)
-(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
+;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
 (define-key M2-comint-mode-map "\r" 'M2-send-to-program-or-jump-to-source-code)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
@@ -134,8 +128,7 @@
     (modify-syntax-entry ?>  "." syntax-table)
     (modify-syntax-entry ?'  "_" syntax-table) ; part of a symbol
     (modify-syntax-entry ?&  "." syntax-table)
-    (modify-syntax-entry ?|  "." syntax-table)
-    ))
+    (modify-syntax-entry ?|  "." syntax-table)))
  (list M2-mode-syntax-table M2-comint-mode-syntax-table))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,11 +238,10 @@ current window added to it."
 	   (selected-window)
 	   (- (current-column) (/ (window-body-width) 2))))
     (set-window-hscroll (selected-window) 0))
-  (update-screen))
+  (M2-update-screen))
 
-(defun update-screen ()
-    (set-window-start (selected-window) (window-start (selected-window)))
-    )
+(defun M2-update-screen ()
+    (set-window-start (selected-window) (window-start (selected-window))))
 
 (defun M2-dynamic-complete-symbol()
   "Dynamic completion function for Macaulay2 symbols."
@@ -301,8 +293,7 @@ can be executed with \\[M2-send-to-program]."
 	  (goto-line linenum2)
 	  (if colnum2 (move-to-column (- colnum2 1)))
 	  (transient-mark-mode 1)
-	  (push-mark (point) nil t)
-	  ))
+	  (push-mark (point) nil t)))
     (goto-line linenum)
     (move-to-column (- colnum 1)))))
 
@@ -343,8 +334,7 @@ can be executed with \\[M2-send-to-program]."
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
 	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
 	       (linenum2 (string-to-number (buffer-substring (match-beginning 5) (match-end 5))))
-	       (colnum2 (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1))
-	       )
+	       (colnum2 (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1)))
 	   (M2-jump-to-source-code filename linenum colnum)))
 	((save-excursion
 	   (beginning-of-line)
@@ -432,8 +422,7 @@ be sent can be entered, with history."
      (if (and (not (and (boundp 'mark-active) mark-active))
 	      (not (and
 		    (equal (point) (point-max))
-		    (equal (current-buffer) (save-excursion (set-buffer send-to-buffer)))
-		    )))
+		    (equal (current-buffer) (save-excursion (set-buffer send-to-buffer))))))
 	 (progn
 	   (end-of-line)
 	   (if (= 1 (forward-line 1))
@@ -473,8 +462,7 @@ be sent can be entered, with history."
 		     ((eq window-system 'x) "-adobe-courier-bold-r-normal--24-240-75-75-m-150-iso8859-1")
 		     (t "12x24")))))
 	 (width (frame-pixel-width))
-	 (height (frame-pixel-height))
-	 )
+	 (height (frame-pixel-height)))
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
     (make-variable-buffer-local 'comint-scroll-show-maximum-output)
@@ -489,7 +477,7 @@ be sent can be entered, with history."
 (if (not (boundp 'font-lock-constant-face))
     (setq font-lock-constant-face font-lock-function-name-face))
 
-(defun parse-line ()
+(defun M2-parse-line ()
      (save-excursion
        (let (eol)
 	 (end-of-line)
@@ -497,58 +485,54 @@ be sent can be entered, with history."
 	 (beginning-of-line)
 	 (parse-partial-sexp (point) eol))))
 
-(defun paren-change ()
-     (car (parse-line)))
+(defun M2-paren-change ()
+     (car (M2-parse-line)))
 
 (defun M2-electric-semi ()
      (interactive)
      (insert ?\;)
-     (and (eolp) (next-line-blank) (= 0 (paren-change))
-	 (M2-newline-and-indent))
-     )
+     (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
+	 (M2-newline-and-indent)))
 
-(defun next-line-indent-amount ()
-     (+ (current-indentation) (* (paren-change) M2-indent-level)))
+(defun M2-next-line-indent-amount ()
+     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
 
-(defun this-line-indent-amount ()
+(defun M2-this-line-indent-amount ()
      (save-excursion
 	  (beginning-of-line)
 	  (if (bobp)
 	      0
 	      (previous-line 1)
-	      (next-line-indent-amount))))
+	      (M2-next-line-indent-amount))))
 
-(defun in-front ()
+(defun M2-in-front ()
      (save-excursion (skip-chars-backward " \t") (bolp)))
 
-(defun blank-line ()
+(defun M2-blank-line ()
      (save-excursion (beginning-of-line) (skip-chars-forward " \t") (eolp)))
 
-(defun next-line-blank()
+(defun M2-next-line-blank()
      (save-excursion
 	  (end-of-line)
 	  (or (eobp)
-	      (progn (forward-char) (blank-line))
-	      )))
+	      (progn (forward-char) (blank-line)))))
 
 (defun M2-newline-and-indent ()
      "Start a new line and indent it properly for Macaulay2 code."
      (interactive)
      (newline)
-     (indent-to (this-line-indent-amount))
-     )
+     (indent-to (M2-this-line-indent-amount)))
 
 (defun M2-electric-right-brace()
      (interactive)
      (self-insert-command 1)
-     (and (eolp) (next-line-blank) (< (paren-change) 0) (M2-newline-and-indent))
-     )
+     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (M2-newline-and-indent)))
 
 (defun M2-electric-tab ()
      (interactive)
-     (if (or (not (in-front)) (blank-line))
+     (if (or (not (M2-in-front)) (M2-blank-line))
 	 (indent-to (+ (current-column) M2-indent-level))
-	 (let ((i (this-line-indent-amount))
+	 (let ((i (M2-this-line-indent-amount))
 	       (j (current-indentation)))
 	      (if (not (= i j))
 		  (progn
