@@ -10,7 +10,7 @@ frontmatter := "-- Auto-generated for Macaulay2-" | version#"VERSION" | ". Do no
 )
 
 (
-"M2-emacs-hlp.txt"
+"M2-emacs-help.txt"
 << frontmatter
 << "                          Running Macaulay2 in Emacs"                            << endl << endl
 << help                      "running Macaulay2 in emacs"                            << endl << close
