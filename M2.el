@@ -515,7 +515,7 @@ be sent can be entered, with history."
      (save-excursion
 	  (end-of-line)
 	  (or (eobp)
-	      (progn (forward-char) (blank-line)))))
+	      (progn (forward-char) (M2-blank-line)))))
 
 (defun M2-newline-and-indent ()
      "Start a new line and indent it properly for Macaulay2 code."
