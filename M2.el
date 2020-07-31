@@ -46,12 +46,13 @@
 
 ;;;###autoload
 (define-derived-mode M2-comint-mode comint-mode "Macaulay2 Interaction"
-  "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}" (M2-common)
-  (setq comint-prompt-regexp M2-comint-prompt-regexp
-	comint-prompt-read-only t
-	comint-use-prompt-regexp t)
-  (set (make-local-variable 'comint-dynamic-complete-functions)
-       '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)))
+  "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
+  (M2-common)
+  (make-local-variable 'comint-dynamic-complete-functions)
+  (make-local-variable 'comint-use-prompt-regexp)
+  (setq comint-dynamic-complete-functions '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)
+	comint-prompt-regexp M2-comint-prompt-regexp
+	comint-use-prompt-regexp t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
