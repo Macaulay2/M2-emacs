@@ -1,11 +1,11 @@
--- Auto-generated for Macaulay2-1.15.1.0. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.16.0.2. Do not modify this file manually. --
 
                        Editing Macaulay2 code with emacs
 
 editing Macaulay2 code with emacs
 *********************************
 
-In this section we learn how to use emacs to edit Macaulay2 code.  Assuming you
+In this section we learn how to use emacs to edit Macaulay2 code. Assuming you
 have set up your emacs init file as described in "setting up the Macaulay2
 emacs interface" when you visit a file whose name ends with .m2 you will see on
 the mode line the name Macaulay2 in parentheses, indicating that the file is
