@@ -320,6 +320,14 @@ can be executed with \\[M2-send-to-program]."
 	((save-excursion
 	   (beginning-of-line)
 	   ;; example:      ../../m2/res.m2:210:45-214:6: --source code:
+	   ;; we also match lines beginning with
+	   ;; * output line numbers, e.g.,:
+	   ;;   o1 = ../../m2/res.m2:210:45-214:6:
+	   ;; * a pipe, for paths enclosed in a box, e.g.,:
+	   ;;   | ../../m2/res.m2:210:45-214:6:
+	   ;; * comments, possibly following additional text, e.g.,:
+	   ;;   foo -- ../../m2/res.m2:210:45-214:6:
+	   ;;   foo -* ../../m2/res.m2:210:45-214:6:
 	   ;;                (1                                         1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6))
 	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\|.*-- *\\|.*-\\* *\\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):"))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
