@@ -307,7 +307,7 @@ can be executed with \\[M2-send-to-program]."
   (interactive)
   (cond ((save-excursion
 	   (search-backward-regexp "\\(-\\*\\|^\\)")
-	   ;; example: -*FunctionBody[../../d/startup.m2.in:123:19-123:21]*-
+	   ;; example: -*FunctionBody[../../m2/startup.m2.in:123:19-123:21]*-
 	   ;; example: -*Function[../../m2/res.m2:191:40-202:36]*-
 	   ;;                         (1    1)      (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
 	   (looking-at "-\\*Function\\(Body\\)?\\[\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)\\]\\*-"))
@@ -325,11 +325,8 @@ can be executed with \\[M2-send-to-program]."
 	   ;;   o1 = ../../m2/res.m2:210:45-214:6:
 	   ;; * a pipe, for paths enclosed in a box, e.g.,:
 	   ;;   | ../../m2/res.m2:210:45-214:6:
-	   ;; * comments, possibly following additional text, e.g.,:
-	   ;;   foo -- ../../m2/res.m2:210:45-214:6:
-	   ;;   foo -* ../../m2/res.m2:210:45-214:6:
-	   ;;                (1                                         1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6))
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\|.*-- *\\|.*-\\* *\\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):"))
+	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6))
+	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):"))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
 	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
@@ -339,8 +336,8 @@ can be executed with \\[M2-send-to-program]."
 	((save-excursion
 	   (beginning-of-line)
 	   ;; example:      ../../m2/res.m2:210:45-214:6: --source code:
-	   ;;                (1                                         1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\|.*-- *\\|.*-\\* *\\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\): "))
+	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
+	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\): "))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
 	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
@@ -351,8 +348,8 @@ can be executed with \\[M2-send-to-program]."
 	   (beginning-of-line)
 	   ;; example:      ../../m2/res.m2:210:45: --source code:
 	   ;; example:      ./packages/Posets.m2:1329:1:(3):[7]: error: type mismatch: ...
-	   ;;                (1                                         1)   (2       2)   (3      3)   (4      4)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\|.*-- *\\|.*-\\* *\\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\):"))
+	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)
+	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\):"))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
 	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1)))
@@ -360,8 +357,8 @@ can be executed with \\[M2-send-to-program]."
 	((save-excursion
 	   (beginning-of-line)
 	   ;; example:      ./packages/Posets.m2:1358: warning: documentation already provided for 'Posets :: moebiusFunction'
-	   ;;                (1                                         1)   (2       2)   (3      3)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\|.*-- *\\|.*-\\* *\\)?\\([^:\n]+\\):\\([0-9]+\\): warning: "))
+	   ;;                (1                     1)   (2       2)   (3      3)
+	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\): warning: "))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3)))))
 	   (M2-jump-to-source-code filename linenum 1)))
