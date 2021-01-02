@@ -478,6 +478,12 @@ be sent can be entered, with history."
       (set-buffer "*M2*")
       (setq comint-scroll-show-maximum-output t))))
 
+(defun M2-info-help (string)
+  (save-excursion
+    (when (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
+      (info-other-window (match-string 1 string)))))
+(add-hook 'comint-output-filter-functions 'M2-info-help)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
