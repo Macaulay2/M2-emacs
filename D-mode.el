@@ -94,7 +94,7 @@
 (modify-syntax-entry ?\n ">"    D-mode-syntax-table)
 (modify-syntax-entry ?\^m ">"   D-mode-syntax-table)
 
-(defconst D-indent-level 5 "*Indentation increment in D-mode")
+(defconst D-indent-level 4 "*Indentation increment in D-mode")
 
 (defun parse-line ()
      (save-excursion
@@ -109,7 +109,7 @@
 
 (defun D-electric-semi ()
      (interactive)
-     (insert ?;)
+     (insert ?\;)
      (and (eolp) (next-line-blank) (= 0 (paren-change))
 	 (D-newline-and-indent))
      )
