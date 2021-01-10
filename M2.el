@@ -52,7 +52,8 @@
   (make-local-variable 'comint-use-prompt-regexp)
   (setq comint-dynamic-complete-functions '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)
 	comint-prompt-regexp M2-comint-prompt-regexp
-	comint-use-prompt-regexp t))
+	comint-use-prompt-regexp t)
+  (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
@@ -482,7 +483,6 @@ be sent can be entered, with history."
   (save-excursion
     (when (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
       (info-other-window (match-string 1 string)))))
-(add-hook 'comint-output-filter-functions 'M2-info-help)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
