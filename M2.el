@@ -75,7 +75,6 @@
 ;; key bindings
 
 (define-key M2-mode-map "\177" 'backward-delete-char-untabify)
-(define-key M2-mode-map "\^M" 'M2-newline-and-indent)
 ;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
