@@ -505,7 +505,7 @@ be sent can be entered, with history."
      (interactive)
      (insert ?\;)
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
-	 (M2-newline-and-indent)))
+	 (newline nil t)))
 
 (defun M2-next-line-indent-amount ()
      (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
