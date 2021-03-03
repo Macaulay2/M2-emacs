@@ -532,6 +532,7 @@ be sent can be entered, with history."
 
 (defun M2-newline-and-indent ()
      "Start a new line and indent it properly for Macaulay2 code."
+     (declare (obsolete newline "Macaulay2 1.18"))
      (interactive)
      (newline)
      (indent-to (M2-this-line-indent-amount)))
