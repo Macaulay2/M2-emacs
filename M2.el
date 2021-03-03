@@ -543,17 +543,12 @@ be sent can be entered, with history."
 
 (defun M2-electric-tab ()
      (interactive)
-     (if (or (not (M2-in-front)) (M2-blank-line))
-	 (indent-to (+ (current-column) M2-indent-level))
-	 (let ((i (M2-this-line-indent-amount))
-	       (j (current-indentation)))
-	      (if (not (= i j))
-		  (progn
-		       (if (< i j)
-			    (delete-region (progn (beginning-of-line) (point))
-					   (progn (back-to-indentation) (point)))
-			    (back-to-indentation))
-		       (indent-to i))))))
+     (save-excursion
+       (delete-region (progn (beginning-of-line) (point))
+		      (progn (back-to-indentation) (point)))
+       (indent-to (M2-this-line-indent-amount)))
+     (if (< (current-column) (current-indentation))
+	 (back-to-indentation)))
 
 (defvar M2-demo-buffer
   (save-excursion
