@@ -75,7 +75,6 @@
 ;; key bindings
 
 (define-key M2-mode-map "\177" 'backward-delete-char-untabify)
-(define-key M2-mode-map "\^M" 'M2-newline-and-indent)
 ;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
@@ -506,7 +505,7 @@ be sent can be entered, with history."
      (interactive)
      (insert ?\;)
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
-	 (M2-newline-and-indent)))
+	 (newline nil t)))
 
 (defun M2-next-line-indent-amount ()
      (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
@@ -533,6 +532,7 @@ be sent can be entered, with history."
 
 (defun M2-newline-and-indent ()
      "Start a new line and indent it properly for Macaulay2 code."
+     (declare (obsolete newline "Macaulay2 1.18"))
      (interactive)
      (newline)
      (indent-to (M2-this-line-indent-amount)))
@@ -540,21 +540,16 @@ be sent can be entered, with history."
 (defun M2-electric-right-brace()
      (interactive)
      (self-insert-command 1)
-     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (M2-newline-and-indent)))
+     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
 
 (defun M2-electric-tab ()
      (interactive)
-     (if (or (not (M2-in-front)) (M2-blank-line))
-	 (indent-to (+ (current-column) M2-indent-level))
-	 (let ((i (M2-this-line-indent-amount))
-	       (j (current-indentation)))
-	      (if (not (= i j))
-		  (progn
-		       (if (< i j)
-			    (delete-region (progn (beginning-of-line) (point))
-					   (progn (back-to-indentation) (point)))
-			    (back-to-indentation))
-		       (indent-to i))))))
+     (save-excursion
+       (delete-region (progn (beginning-of-line) (point))
+		      (progn (back-to-indentation) (point)))
+       (indent-to (M2-this-line-indent-amount)))
+     (if (< (current-column) (current-indentation))
+	 (back-to-indentation)))
 
 (defvar M2-demo-buffer
   (save-excursion
