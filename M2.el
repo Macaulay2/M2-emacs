@@ -540,7 +540,7 @@ be sent can be entered, with history."
 (defun M2-electric-right-brace()
      (interactive)
      (self-insert-command 1)
-     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (M2-newline-and-indent)))
+     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
 
 (defun M2-electric-tab ()
      (interactive)
