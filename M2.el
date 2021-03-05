@@ -18,6 +18,7 @@
 (require 'font-lock)
 (require 'comint)
 (require 'M2-symbols)
+(eval-when-compile (require 'subr-x)) ;;; for string-trim
 
 (defgroup Macaulay2 nil
   "Support for Macaulay2 language development."
@@ -56,6 +57,21 @@
   (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; M2-simple-doc-mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;###autoload
+(define-derived-mode M2-simple-doc-mode M2-mode "Macaulay2 SimpleDoc"
+  "Major mode for writing Macaulay2 documentation using SimpleDoc"
+  (set (make-local-variable 'indent-line-function)
+       'M2-simple-doc-indent-line-function))
+
+(defcustom M2-simple-doc-indent-level 2
+  "Indentation increment in Macaulay2 SimpleDoc mode"
+  :type 'integer
+  :group 'Macaulay2)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -78,6 +94,7 @@
 ;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
+(define-key M2-mode-map (kbd "C-c C-s") 'M2-toggle-simple-doc-mode)
 
 (define-key M2-comint-mode-map "\t" 'comint-dynamic-complete)
 (define-key M2-comint-mode-map [ f2 ] 'M2-position-point)
@@ -561,6 +578,78 @@ be sent can be entered, with history."
     (current-buffer))
   "The buffer from which lines are obtained by M2-send-to-program when the
 cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; M2-simple-doc-mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun M2-toggle-simple-doc-mode ()
+  "Toggle between normal Macaulay2 mode and SimpleDoc mode"
+  (interactive)
+  (if (equal major-mode 'M2-mode) (M2-simple-doc-mode) (M2-mode)))
+
+(defun M2-simple-doc-get-line ()
+  (string-trim (thing-at-point 'line t)))
+
+(defun M2-simple-doc-top-level-p (line)
+  (or (string= line "doc ///") (string= line "///")))
+
+(defun M2-simple-doc-parent-p (current-line child)
+  (let ((keyword (assoc child M2-simple-doc-keywords)))
+    (if keyword
+	(member current-line (cdr keyword))
+      ;; for non-keywords, parent is either the nearest keyword
+      (or (assoc current-line M2-simple-doc-keywords)
+	  ;; or the nearest line beginning with a colon, e.g.,:
+	  ;;   :foo
+	  ;;     bar
+	  (and (> (length current-line) 0) (> (length child) 0)
+	       (string= (substring current-line 0 1) ":")
+	       (not (string= (substring child 0 1) ":")))))))
+;;; TODO - properly indent Inputs, Outputs, and CannedExamples
+
+(defun M2-simple-doc-parent-indent (child)
+  (save-excursion
+    (while (not (or (M2-simple-doc-parent-p (M2-simple-doc-get-line) child)
+		    (bobp)))
+      (forward-line -1))
+    (current-indentation)))
+
+(defun M2-simple-doc-indent-line-function ()
+  "Properly indent a Macaulay2 SimpleDoc string"
+  (interactive)
+  (let ((current-line (M2-simple-doc-get-line)))
+    (M2-indent-to (if (M2-simple-doc-top-level-p current-line) 0
+		    (+ (M2-simple-doc-parent-indent current-line)
+		       M2-simple-doc-indent-level)))))
+
+(defvar M2-simple-doc-keywords
+  '(("Node" . ("doc ///"))
+    ("Key" . ("doc ///" "Node"))
+    ("Headline" . ("doc ///" "Node"))
+    ("Usage" . ("doc ///" "Node" "Synopsis")) 
+    ("Inputs" . ("doc ///" "Node" "Synopsis"))
+    ("Outputs" . ("doc ///" "Node" "Synopsis"))
+    ("Consequences" . ("doc ///" "Node" "Synopsis"))
+    ("Description" . ("doc ///" "Node" "Synopsis"))
+    ("Synopsis" . ("doc ///" "Node"))
+    ("Acknowledgement" . ("doc ///" "Node"))
+    ("Contributors" . ("doc ///" "Node"))
+    ("References" . ("doc ///" "Node"))
+    ("Caveat" . ("doc ///" "Node"))
+    ("SeeAlso" . ("doc ///" "Node"))
+    ("Subnodes" . ("doc ///" "Node"))
+    ("SourceCode" . ("doc ///" "Node"))
+    ("ExampleFiles" . ("doc ///" "Node"))
+    ("Heading" . ("Synopsis"))
+    ("BaseFunction" . ("Synopsis"))
+    ("Example" . ("Description"))
+    ("CannedExample" . ("Description"))
+    ("Text" . ("Description"))
+    ("Tree" . ("Description"))
+    ("Pre" . ("Description"))
+    ("Code" . ("Description"))
+    ("Item" . ("Consequences"))))
 
 ; enable syntax highlighting:
 (add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
