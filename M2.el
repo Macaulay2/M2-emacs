@@ -542,14 +542,17 @@ be sent can be entered, with history."
      (self-insert-command 1)
      (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
 
+(defun M2-indent-to (indent-amount)
+  (save-excursion
+    (delete-region (progn (beginning-of-line) (point))
+		   (progn (back-to-indentation) (point)))
+    (indent-to indent-amount))
+  (if (< (current-column) (current-indentation))
+      (back-to-indentation)))
+
 (defun M2-electric-tab ()
-     (interactive)
-     (save-excursion
-       (delete-region (progn (beginning-of-line) (point))
-		      (progn (back-to-indentation) (point)))
-       (indent-to (M2-this-line-indent-amount)))
-     (if (< (current-column) (current-indentation))
-	 (back-to-indentation)))
+  (interactive)
+  (M2-indent-to (M2-this-line-indent-amount)))
 
 (defvar M2-demo-buffer
   (save-excursion
