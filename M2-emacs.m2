@@ -1,4 +1,4 @@
--- Auto-generated for Macaulay2-1.17. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.18. Do not modify this file manually. --
 
                        Editing Macaulay2 code with emacs
 
