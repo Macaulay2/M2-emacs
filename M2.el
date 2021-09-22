@@ -49,10 +49,8 @@
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
   (make-local-variable 'comint-dynamic-complete-functions)
-  (make-local-variable 'comint-use-prompt-regexp)
   (setq comint-dynamic-complete-functions '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)
-	comint-prompt-regexp M2-comint-prompt-regexp
-	comint-use-prompt-regexp t)
+	comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -363,7 +361,8 @@ can be executed with \\[M2-send-to-program]."
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3)))))
 	   (M2-jump-to-source-code filename linenum 1)))
-	(t (comint-send-input))))
+	(t (let ((comint-use-prompt-regexp t))
+	     (comint-send-input)))))
 
 (defun M2-send-to-program (send-to-buffer)
      "Send the current line except for a possible prompt, or the region, if the
