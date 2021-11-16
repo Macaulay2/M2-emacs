@@ -1,4 +1,4 @@
--- Auto-generated for Macaulay2-1.18. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.19. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
