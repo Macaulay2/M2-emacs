@@ -49,9 +49,7 @@
 (define-derived-mode M2-comint-mode comint-mode "Macaulay2 Interaction"
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
-  (make-local-variable 'comint-dynamic-complete-functions)
-  (setq comint-dynamic-complete-functions '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)
-	comint-prompt-regexp M2-comint-prompt-regexp)
+  (setq comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -259,7 +257,7 @@ current window added to it."
   (let* ((bounds (bounds-of-thing-at-point 'symbol))
          (start (car bounds))
          (end (cdr bounds)))
-    (list start end M2-symbols . nil)))
+    (list start end M2-symbols :exclusive 'no)))
 
 (defun M2-to-end-of-prompt()
      "Move to end of prompt matching M2-comint-prompt-regexp on this line."
