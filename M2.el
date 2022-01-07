@@ -17,6 +17,7 @@
 
 (require 'font-lock)
 (require 'comint)
+(require 'thingatpt)
 (require 'M2-symbols)
 
 (defgroup Macaulay2 nil
@@ -68,7 +69,8 @@
   (set (make-local-variable 'indent-line-function) 'M2-electric-tab)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
-  (setq case-fold-search nil))
+  (setq case-fold-search nil)
+  (add-hook 'completion-at-point-functions 'M2-completion-at-point nil t))
 
 ;; key bindings
 
@@ -250,6 +252,14 @@ current window added to it."
   (interactive)
   (let ((word (comint-word "a-zA-Z")))
     (if word (comint-dynamic-simple-complete word M2-symbols))))
+
+(defun M2-completion-at-point ()
+  "Function used for `completion-at-point-functions' in `M2-mode' and
+`M2-comint-mode'."
+  (let* ((bounds (bounds-of-thing-at-point 'symbol))
+         (start (car bounds))
+         (end (cdr bounds)))
+    (list start end M2-symbols . nil)))
 
 (defun M2-to-end-of-prompt()
      "Move to end of prompt matching M2-comint-prompt-regexp on this line."
