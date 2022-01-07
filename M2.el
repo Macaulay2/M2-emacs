@@ -247,6 +247,7 @@ current window added to it."
 
 (defun M2-dynamic-complete-symbol()
   "Dynamic completion function for Macaulay2 symbols."
+  (declare (obsolete completion-at-point "Macaulay2 1.20"))
   (interactive)
   (let ((word (comint-word "a-zA-Z")))
     (if word (comint-dynamic-simple-complete word M2-symbols))))
