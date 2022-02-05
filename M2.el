@@ -110,6 +110,41 @@
     (define-key mode-map [ (meta f10) ] 'M2-match-previous-bracketed-input)))
  (list M2-mode-map M2-comint-mode-map))
 
+;; menus
+
+(setq M2-common-menu
+      '(["Match previous bracketed input" M2-match-previous-bracketed-input]
+	["Match next bracketed input"     M2-match-next-bracketed-input]
+	["Set demo buffer"                M2-set-demo-buffer]
+	["Switch to demo buffer"          M2-switch-to-demo-buffer]
+	["Start demo"                     M2-demo]))
+
+(easy-menu-define M2-menu M2-mode-map
+  "Menu for Macaulay2 major mode"
+  (append
+   '("Macaulay2"
+     ["Start Macaulay2"               M2]
+     ["Send line/region to Macaulay2" M2-send-to-program]
+     ["Newline and indent"            M2-newline-and-indent]
+     ["Electric semicolon"            M2-electric-semi]
+     ["Electric right brace"          M2-electric-right-brace]
+     ["Electric tab"                  M2-electric-tab]
+     "-")
+   M2-common-menu))
+
+(easy-menu-define M2-comint-menu M2-comint-mode-map
+  "Menu for Macaulay2 Interaction major mode"
+  (append
+   '("Macaulay2 Interaction"
+     ["Send to Macaulay2"   M2-send-to-program-or-jump-to-source-code]
+     ["Go to end of prompt" M2-to-end-of-prompt]
+     ["Center point"        M2-position-point]
+     ["Jog left"            M2-jog-left]
+     ["Jog right"           M2-jog-right]
+     ["Toggle word wrap"    M2-toggle-truncate-lines]
+    "-")
+   M2-common-menu))
+
 ;; syntax
 
 ; bug: ///A"B"C/// vs ///ABC///
