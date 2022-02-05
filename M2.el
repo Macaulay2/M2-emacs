@@ -17,6 +17,7 @@
 
 (require 'font-lock)
 (require 'comint)
+(require 'thingatpt)
 (require 'M2-symbols)
 
 (defgroup Macaulay2 nil
@@ -48,9 +49,7 @@
 (define-derived-mode M2-comint-mode comint-mode "Macaulay2 Interaction"
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
-  (make-local-variable 'comint-dynamic-complete-functions)
-  (setq comint-dynamic-complete-functions '(M2-dynamic-complete-symbol comint-dynamic-complete-filename)
-	comint-prompt-regexp M2-comint-prompt-regexp)
+  (setq comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,7 +67,8 @@
   (set (make-local-variable 'indent-line-function) 'M2-electric-tab)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
-  (setq case-fold-search nil))
+  (setq case-fold-search nil)
+  (add-hook 'completion-at-point-functions 'M2-completion-at-point nil t))
 
 ;; key bindings
 
@@ -78,7 +78,7 @@
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
 
-(define-key M2-comint-mode-map "\t" 'comint-dynamic-complete)
+(define-key M2-comint-mode-map "\t" 'completion-at-point)
 (define-key M2-comint-mode-map [ f2 ] 'M2-position-point)
 (define-key M2-comint-mode-map [ (control C) ?. ] 'M2-position-point)
 (define-key M2-comint-mode-map [ f3 ] 'M2-jog-left)
@@ -104,8 +104,8 @@
     (define-key mode-map [ (meta f12) ] 'M2-demo)
     (define-key mode-map [ (control f11) ] 'M2-switch-to-demo-buffer)
     (define-key mode-map [ (meta f11) ] 'M2-set-demo-buffer)
-    (define-key mode-map "\^C\t" 'M2-dynamic-complete-symbol)
-    (define-key mode-map [(meta tab)] 'M2-dynamic-complete-symbol)
+    (define-key mode-map "\^C\t" 'completion-at-point)
+    (define-key mode-map [(meta tab)] 'completion-at-point)
     (define-key mode-map [ f10 ] 'M2-match-next-bracketed-input)
     (define-key mode-map [ (meta f10) ] 'M2-match-previous-bracketed-input)))
  (list M2-mode-map M2-comint-mode-map))
@@ -247,9 +247,18 @@ current window added to it."
 
 (defun M2-dynamic-complete-symbol()
   "Dynamic completion function for Macaulay2 symbols."
+  (declare (obsolete completion-at-point "Macaulay2 1.20"))
   (interactive)
   (let ((word (comint-word "a-zA-Z")))
     (if word (comint-dynamic-simple-complete word M2-symbols))))
+
+(defun M2-completion-at-point ()
+  "Function used for `completion-at-point-functions' in `M2-mode' and
+`M2-comint-mode'."
+  (let* ((bounds (bounds-of-thing-at-point 'symbol))
+         (start (car bounds))
+         (end (cdr bounds)))
+    (list start end M2-symbols :exclusive 'no)))
 
 (defun M2-to-end-of-prompt()
      "Move to end of prompt matching M2-comint-prompt-regexp on this line."
