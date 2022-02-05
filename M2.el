@@ -455,7 +455,7 @@ be sent can be entered, with history."
   (interactive)
   (let* ((f (prog1
 	      (select-frame
-	       (new-frame
+	       (make-frame
 		'((height . 30)
 		  (width . 80)
 		  (menu-bar-lines . 0)
