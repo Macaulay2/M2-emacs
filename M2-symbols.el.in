@@ -6,8 +6,6 @@
   "A list of the symbols available in Macaulay2, for use with dynamic completion." )
 
 (let ((max-specpdl-size 1000)) ; needed for passing long long lists to regexp-opt
-  (defconst M2-comment-regexp  (rx "--" (0+ not-newline))
-      "Regular expression for Macaulay2 comment lines")
   (defconst M2-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
       "Regular expression for Macaulay2 keywords")
   (defconst M2-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
@@ -15,28 +13,23 @@
   (defconst M2-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
       "Regular expression for Macaulay2 functions")
   (defconst M2-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
-      "Regular expression for Macaulay2 constants")
-  (defconst M2-string-regexp   @M2STRINGS@
-      "Regular expression for Macaulay2 strings"))
+      "Regular expression for Macaulay2 constants"))
 
 (defconst M2-comint-prompt-regexp "^\\([ \t]*\\(i*[1-9][0-9]* :\\|o*[1-9][0-9]* =\\) \\)?"
   "Regular expression for the Macaulay2 prompt")
 
 (defconst M2-mode-font-lock-keywords
   (list
-   (cons M2-comment-regexp  'font-lock-comment-face)
    (cons M2-keyword-regexp  'font-lock-keyword-face)
    (cons M2-type-regexp     'font-lock-type-face)
    (cons M2-function-regexp 'font-lock-function-name-face)
-   (cons M2-constant-regexp 'font-lock-constant-face)
-   (cons M2-string-regexp   'font-lock-string-face)))
+   (cons M2-constant-regexp 'font-lock-constant-face)))
 
 ; TODO:
 ; font-lock-warning-face
 ; font-lock-variable-name-face
 ; font-lock-builtin-face
 ; font-lock-preprocessor-face
-; font-lock-string-face
 ; font-lock-doc-face
 ; font-lock-negation-char-face
 
