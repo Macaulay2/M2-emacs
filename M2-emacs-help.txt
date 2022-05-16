@@ -1,4 +1,4 @@
--- Auto-generated for Macaulay2-1.19. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.20. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
@@ -7,7 +7,7 @@ running Macaulay2 in emacs
 
 Because some answers can be very wide, it is a good idea to run Macaulay2 in a
 window that does not wrap output lines and allows the user to scroll
-horizontally to see the rest of the output.  We provide a package for emacs
+horizontally to see the rest of the output.  We provide a package for "emacs"
 that implements this. It also provides for dynamic completion of symbols in the
 language.
 
