@@ -1,4 +1,4 @@
--- Auto-generated for Macaulay2-1.20. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.21. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
@@ -15,7 +15,7 @@ language.
 There is an ASCII version of this section of the documentation distributed in
 the file share/emacs/site-lisp/macaulay2/M2-emacs-help.txt. It might be useful
 for you to visit that file with emacs now, thereby avoiding having to cut and
-paste bits of text into emacs buffers for the deomonstrations below.
+paste bits of text into emacs buffers for the demonstrations below.
 
 
 If you are a newcomer to emacs, start up emacs with the command emacs and then
