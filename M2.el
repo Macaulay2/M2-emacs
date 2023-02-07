@@ -369,7 +369,7 @@ can be executed with \\[M2-send-to-program]."
 	   ;; * a pipe, for paths enclosed in a box, e.g.,:
 	   ;;   | ../../m2/res.m2:210:45-214:6:
 	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6))
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):"))
+	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):?"))
 	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
 	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
 	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
