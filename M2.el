@@ -352,13 +352,13 @@ can be executed with \\[M2-send-to-program]."
 	   (search-backward-regexp "\\(-\\*\\|^\\)")
 	   ;; example: -*FunctionBody[../../m2/startup.m2.in:123:19-123:21]*-
 	   ;; example: -*Function[../../m2/res.m2:191:40-202:36]*-
-	   ;;                         (1    1)      (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
-	   (looking-at "-\\*Function\\(Body\\)?\\[\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)\\]\\*-"))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
-	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
-	       (linenum2 (if (match-beginning 5) (string-to-number (buffer-substring (match-beginning 5) (match-end 5)))))
-	       (colnum2 (if (match-beginning 6) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1)))
+	   ;;                                (1       1)   (2      2)   (3      3)   (4      4)   (5      5)
+	   (looking-at "-\\*[[:alpha:]]+\\[\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)\\]\\*-"))
+	 (let ((filename (buffer-substring (match-beginning 1) (match-end 1)))
+	       (linenum (string-to-number (buffer-substring (match-beginning 2) (match-end 2))))
+	       (colnum (if (match-beginning 3) (string-to-number (buffer-substring (match-beginning 3) (match-end 3))) 1))
+	       (linenum2 (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4)))))
+	       (colnum2 (if (match-beginning 5) (string-to-number (buffer-substring (match-beginning 5) (match-end 5))) 1)))
 	   (M2-jump-to-source-code filename linenum colnum linenum2 colnum2)))
 	((save-excursion
 	   (beginning-of-line)
