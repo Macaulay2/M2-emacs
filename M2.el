@@ -471,6 +471,7 @@ START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
 			       (setq send-it nil)
 			       cmd)
 			   "")
+			(M2-blink-region start end)
 			(buffer-substring start end))))
 	    (progn
 	      (select-window (get-buffer-window (set-buffer send-to-buffer) 'visible))
@@ -657,6 +658,34 @@ for more."
     (current-buffer))
   "The buffer from which lines are obtained by M2-send-to-program when the
 cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
+
+;;; "blink" evaluated region (heavily inspired by ESS)
+
+(defcustom M2-blink-region-flag nil
+  "If non-nil, evaluated region is highlighted for `M2-blink-delay' seconds."
+  :type 'boolean
+  :group 'Macaulay2)
+
+(defcustom M2-blink-delay .3
+  "The number of seconds that the evaluated region is highlighted, provided
+that `M2-blink-region-flag' is non-nil"
+  :type 'number
+  :group 'Macaulay2)
+
+(defvar M2-current-region-overlay
+  (let ((overlay (make-overlay (point) (point))))
+    (overlay-put overlay 'face 'highlight)
+    overlay)
+  "The overlay for highlighting currently evaluated region or line.")
+
+(defun M2-blink-region (start end)
+  "If `M2-blink-region-flag' is non-nil, highlight the evaluated region for
+`M2-blink-delay' seconds."
+  (when M2-blink-region-flag
+    (move-overlay M2-current-region-overlay start end)
+    (run-with-timer M2-blink-delay nil
+                    (lambda ()
+                      (delete-overlay M2-current-region-overlay)))))
 
 ; enable syntax highlighting:
 (add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
