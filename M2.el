@@ -491,6 +491,23 @@ be sent can be entered, with history."
 	 (M2-send-region-to-program send-to-buffer)
        (M2-send-line-to-program send-to-buffer)))
 
+(defun M2-send-buffer-to-program (send-to-buffer)
+  "Send the entire buffer to Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point-min) (point-max)))
+
+(defun M2-send-buffer-from-beg-to-here-to-program (send-to-buffer)
+  "Send everything from the beginning of the buffer to the point to
+Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point-min) (point)))
+
+(defun M2-send-buffer-from-here-to-end-to-program (send-to-buffer)
+  "Send everything from the point to the end of the buffer to
+Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point) (point-max)))
+
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
