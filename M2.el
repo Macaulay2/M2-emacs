@@ -508,6 +508,14 @@ Macaulay2.  See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer (point) (point-max)))
 
+(defun M2-send-paragraph-to-program (send-to-buffer)
+  "Send the current paragraph to Macaulay2.  See `M2-send-to-program'
+for more."
+  (interactive (M2--get-send-to-buffer))
+  (let ((end (progn (forward-paragraph) (point)))
+	(start (progn (backward-paragraph) (point))))
+    (M2--send-to-program-helper send-to-buffer start end))
+  (forward-paragraph))
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
