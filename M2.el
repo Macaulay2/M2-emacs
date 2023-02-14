@@ -96,7 +96,7 @@
 (define-key M2-comint-mode-map "\r" 'M2-send-to-program-or-jump-to-source-code)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
 
-(mapcar
+(mapc
  (function
   (lambda (mode-map)
     (define-key mode-map [ f12 ] 'M2) ; the user may want to make this one global
@@ -149,7 +149,7 @@
 
 ; bug: ///A"B"C/// vs ///ABC///
 
-(mapcar
+(mapc
  (function
   (lambda (syntax-table)
     (modify-syntax-entry ?\\ "\\" syntax-table) ; we use \, signifying an escape character, to get "asdf\"asdf" to be correctly colorized
