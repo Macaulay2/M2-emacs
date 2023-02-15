@@ -31,6 +31,22 @@ Alternatively, for those who would like to install M2-mode without installing Ma
 2. Press `M-x package-list-packages`, then find and install M2-mode.
 -->
 
+### Installing with Emacs package managers
+
+The M2-mode package can be installed with a single line of code using [Quelpa](https://github.com/quelpa/quelpa) or [straight.el](https://github.com/radian-software/straight.el).
+
+#### Quelpa
+
+```elisp
+(quelpa '(M2 :repo "Macaulay2/M2-emacs" :fetcher github :files ("*.el" "*.el.gz")))
+```
+
+#### straight.el
+
+```elisp
+(straight-use-package '(M2 :type git :host github :repo "Macaulay2/M2-emacs" :files ("*.el" "*.el.gz")))
+```
+
 ### Installing from the Git Repository
 
 For those who like to live dangerously, or to develop this package, you can also install directly from this repository:
