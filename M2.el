@@ -77,6 +77,15 @@
 ;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
+(define-key M2-mode-map (kbd "<C-return>") 'M2-send-to-program)
+(define-key M2-mode-map (kbd "C-c C-j") 'M2-send-line-to-program)
+(define-key M2-mode-map (kbd "C-c C-r") 'M2-send-region-to-program)
+(define-key M2-mode-map (kbd "C-c C-b") 'M2-send-buffer-to-program)
+(define-key M2-mode-map (kbd "C-c <C-up>")
+  'M2-send-buffer-from-beg-to-here-to-program)
+(define-key M2-mode-map (kbd "C-c <C-down>")
+  'M2-send-buffer-from-here-to-end-to-program)
+(define-key M2-mode-map (kbd "C-c C-p") 'M2-send-paragraph-to-program)
 
 (define-key M2-comint-mode-map "\t" 'completion-at-point)
 (define-key M2-comint-mode-map [ f2 ] 'M2-position-point)
@@ -125,6 +134,14 @@
    '("Macaulay2"
      ["Start Macaulay2"               M2]
      ["Send line/region to Macaulay2" M2-send-to-program]
+     ["Send line to Macaulay2"        M2-send-line-to-program]
+     ["Send region to Macaulay2"      M2-send-region-to-program]
+     ["Send buffer to Macaulay2"      M2-send-buffer-to-program]
+     ["Send buffer to here to Macaulay2"
+      M2-send-buffer-from-beg-to-here-to-program]
+     ["Send buffer from here to Macaulay2"
+      M2-send-buffer-from-here-to-end-to-program]
+     ["Send paragraph to Macaulay2"   M2-send-paragraph-to-program]
      ["Newline and indent"            M2-newline-and-indent]
      ["Electric semicolon"            M2-electric-semi]
      ["Electric right brace"          M2-electric-right-brace]
@@ -408,21 +425,19 @@ can be executed with \\[M2-send-to-program]."
 	(t (let ((comint-use-prompt-regexp t))
 	     (comint-send-input)))))
 
-(defun M2-send-to-program (send-to-buffer)
-     "Send the current line except for a possible prompt, or the region, if the
-mark is active, to Macaulay2 in its buffer, making its window visible.
-Afterwards, in the case where the mark is not active, move the cursor to
-the next line.  Alternatively, if the point is at a prompt or a blank line
-at the end of the buffer *M2*, get the next line of input from demo buffer
-set by `M2-set-demo-buffer', or if it's at the end of the buffer *M2* with a
-line of input already there, submit it.  With a prefix argument, the name of
-the buffer to which this and future uses of the command (in this buffer) should
-be sent can be entered, with history."
-     (interactive
-      (list
-       (cond (current-prefix-arg (read-from-minibuffer "buffer to send command to: " "*M2*" nil nil 'M2-send-to-buffer-history))
-	     (t (car M2-send-to-buffer-history)))))
-     (or (get-buffer-window send-to-buffer 'visible)
+(defun M2--get-send-to-buffer ()
+  "Helper function for `M2-send-to-program` and friends.  Gets buffer for
+Macaulay2 inferior process from minibuffer or history."
+  (list
+   (cond (current-prefix-arg
+	  (read-from-minibuffer "buffer to send command to: " "*M2*" nil nil
+				'M2-send-to-buffer-history))
+	 (t (car M2-send-to-buffer-history)))))
+
+(defun M2--send-to-program-helper (send-to-buffer start end)
+  "Helper function for `M2-send-to-program` and friends.  Sends code between
+START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
+  (or (get-buffer-window send-to-buffer 'visible)
 	 (pop-to-buffer (prog1 (current-buffer) (pop-to-buffer send-to-buffer))))
      (select-window
       (prog1
@@ -456,32 +471,69 @@ be sent can be entered, with history."
 			       (setq send-it nil)
 			       cmd)
 			   "")
-		       (if (and (boundp 'mark-active) mark-active)
-			   (buffer-substring (point) (mark))
-			 (buffer-substring
-			  (save-excursion (M2-to-end-of-prompt) (point))
-			  (save-excursion (end-of-line) (point)))))))
+			(M2-blink-region start end)
+			(buffer-substring start end))))
 	    (progn
 	      (select-window (get-buffer-window (set-buffer send-to-buffer) 'visible))
 	      (goto-char (point-max))
 	      (insert cmd)
 	      (goto-char (point-max))
 	      (set-window-point (get-buffer-window send-to-buffer 'visible) (point))
-	      (if send-it (comint-send-input))
-	      ; (setq deactivate-mark t)
-	      ))))
-     (setq deactivate-mark nil)
-     (if (and (not (and (boundp 'mark-active) mark-active))
-	      (not (and
-		    (equal (point) (point-max))
-		    (equal (current-buffer) (save-excursion (set-buffer send-to-buffer))))))
-	 (progn
-	   (end-of-line)
-	   (if (= 1 (forward-line 1))
-	       (progn
-		 (end-of-line)
-		 (insert "\n")))
-	   (M2-to-end-of-prompt))))
+	      (if send-it (comint-send-input)))))))
+
+(defun M2-send-region-to-program (send-to-buffer)
+  "Send the current region to Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (region-beginning) (region-end)))
+
+(defun M2-send-line-to-program (send-to-buffer)
+  "Send the current line to Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer
+			      (save-excursion (M2-to-end-of-prompt) (point))
+			      (line-end-position))
+  (forward-line))
+
+(defun M2-send-to-program (send-to-buffer)
+     "Send the current line except for a possible prompt, or the region, if the
+mark is active, to Macaulay2 in its buffer, making its window visible.
+Afterwards, in the case where the mark is not active, move the cursor to
+the next line.  Alternatively, if the point is at a prompt or a blank line
+at the end of the buffer *M2*, get the next line of input from demo buffer
+set by `M2-set-demo-buffer', or if it's at the end of the buffer *M2* with a
+line of input already there, submit it.  With a prefix argument, the name of
+the buffer to which this and future uses of the command (in this buffer) should
+be sent can be entered, with history."
+     (interactive (M2--get-send-to-buffer))
+     (if (region-active-p)
+	 (M2-send-region-to-program send-to-buffer)
+       (M2-send-line-to-program send-to-buffer)))
+
+(defun M2-send-buffer-to-program (send-to-buffer)
+  "Send the entire buffer to Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point-min) (point-max)))
+
+(defun M2-send-buffer-from-beg-to-here-to-program (send-to-buffer)
+  "Send everything from the beginning of the buffer to the point to
+Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point-min) (point)))
+
+(defun M2-send-buffer-from-here-to-end-to-program (send-to-buffer)
+  "Send everything from the point to the end of the buffer to
+Macaulay2.  See `M2-send-to-program' for more."
+  (interactive (M2--get-send-to-buffer))
+  (M2--send-to-program-helper send-to-buffer (point) (point-max)))
+
+(defun M2-send-paragraph-to-program (send-to-buffer)
+  "Send the current paragraph to Macaulay2.  See `M2-send-to-program'
+for more."
+  (interactive (M2--get-send-to-buffer))
+  (let ((end (progn (forward-paragraph) (point)))
+	(start (progn (backward-paragraph) (point))))
+    (M2--send-to-program-helper send-to-buffer start end))
+  (forward-paragraph))
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
@@ -606,6 +658,34 @@ be sent can be entered, with history."
     (current-buffer))
   "The buffer from which lines are obtained by M2-send-to-program when the
 cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
+
+;;; "blink" evaluated region (heavily inspired by ESS)
+
+(defcustom M2-blink-region-flag nil
+  "If non-nil, evaluated region is highlighted for `M2-blink-delay' seconds."
+  :type 'boolean
+  :group 'Macaulay2)
+
+(defcustom M2-blink-delay .3
+  "The number of seconds that the evaluated region is highlighted, provided
+that `M2-blink-region-flag' is non-nil"
+  :type 'number
+  :group 'Macaulay2)
+
+(defvar M2-current-region-overlay
+  (let ((overlay (make-overlay (point) (point))))
+    (overlay-put overlay 'face 'highlight)
+    overlay)
+  "The overlay for highlighting currently evaluated region or line.")
+
+(defun M2-blink-region (start end)
+  "If `M2-blink-region-flag' is non-nil, highlight the evaluated region for
+`M2-blink-delay' seconds."
+  (when M2-blink-region-flag
+    (move-overlay M2-current-region-overlay start end)
+    (run-with-timer M2-blink-delay nil
+                    (lambda ()
+                      (delete-overlay M2-current-region-overlay)))))
 
 ; enable syntax highlighting:
 (add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
