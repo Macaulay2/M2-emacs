@@ -50,7 +50,11 @@
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
-  (add-hook 'comint-output-filter-functions 'M2-info-help nil t))
+  (add-hook 'comint-output-filter-functions 'M2-info-help nil t)
+  (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
+  (setq-local compilation-transform-file-match-alist
+	      M2-transform-file-match-alist)
+  (compilation-shell-minor-mode 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
@@ -102,7 +106,7 @@
 (define-key M2-comint-mode-map [ (control C) r ] 'scroll-right)
 ;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
-(define-key M2-comint-mode-map "\r" 'M2-send-to-program-or-jump-to-source-code)
+(define-key M2-comint-mode-map "\r" 'M2-send-input)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
 
 (mapcar
@@ -153,7 +157,7 @@
   "Menu for Macaulay2 Interaction major mode"
   (append
    '("Macaulay2 Interaction"
-     ["Send to Macaulay2"   M2-send-to-program-or-jump-to-source-code]
+     ["Send to Macaulay2"   M2-send-input]
      ["Go to end of prompt" M2-to-end-of-prompt]
      ["Center point"        M2-position-point]
      ["Jog left"            M2-jog-left]
@@ -344,86 +348,48 @@ can be executed with \\[M2-send-to-program]."
      (re-search-backward "<<<")
      (match-end 0))))
 
-(defun M2-jump-to-source-code (filename linenum colnum &optional linenum2 colnum2)
-  ; it's a mystery why this doesn't always highlight the entire region, when the file is first visited
-  (cond
-   ((equal filename "stdio") (error "Source code was from standard input"))
-   ((not (file-exists-p filename)) (error "File not found: %s" filename))
-   (t
-    (find-file-other-window filename)
-    (if linenum2
-	(progn
-	  (goto-line linenum2)
-	  (if colnum2 (move-to-column (- colnum2 1)))
-	  (transient-mark-mode 1)
-	  (push-mark (point) nil t)))
-    (goto-line linenum)
-    (move-to-column (- colnum 1)))))
+(defvar M2-error-regexp-alist
+  '(
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; printMessage (stdiop.d) ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; error messages, e.g.,
+    ;; i1 : load "packages/Macaulay2Doc/demo1.m2"; g 2
+    ;; packages/Macaulay2Doc/demo1.m2:8:12:(3):[2]: error: division by zero
+    ;;  (1           1)   (2      2)   (3      3)
+    ("\\([^:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
+     1 2 3)
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; net(FilePosition) (debugging.m2) ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; start & end line/column numbers, e.g.,:
+    ;; i1 : locate (rank, Matrix)
+    ;; o1 = m2/matrix1.m2:663:19-666:20
+    ;;  (1              1)   (2      2)   (3      3)   (4      4)   (5      5)
+    ("\\([^\\[:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)"
+     1 (2 . 4) (3 . 5) 0)
+    ;; no end line/column numbers, e.g.,:
+    ;; i2 : locate makeDocumentTag rank
+    ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
+    ;;  (1           1)   (2      2)   (3      3)
+    ("\\([^:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\)"
+     1 2 3 0))
+  "Regular expressions for matching file positions in Macaulay2 output.")
 
-(defun M2-send-to-program-or-jump-to-source-code()
-  "If line the cursor is on is recognized as a Macaulay2 error message, jump to the
-  location specified in the corresponding file.  Otherwise, send the input to the command
-  interpreter using \\[comint-send-input]."
+(defvar M2-transform-file-match-alist
+  '(("^stdio$" nil)
+    ("^currentString$" nil)
+    ("^Macaulay2/Core/startup\\.m2\\.in$" nil))
+  "List of filenames not to match in Macaulay2 output.")
+
+(defun M2-send-input ()
+  "Send the input to the Macaulay2 interpreter using `comint-send-input'."
   (interactive)
-  (cond ((save-excursion
-	   (search-backward-regexp "\\(-\\*\\|^\\)")
-	   ;; example: -*FunctionBody[../../m2/startup.m2.in:123:19-123:21]*-
-	   ;; example: -*Function[../../m2/res.m2:191:40-202:36]*-
-	   ;;                 (1            1)     (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
-	   (looking-at "-\\*\\([[:alpha:]]+\\)\\[\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)\\]\\*-"))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
-	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
-	       (linenum2 (if (match-beginning 5) (string-to-number (buffer-substring (match-beginning 5) (match-end 5)))))
-	       (colnum2 (if (match-beginning 6) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1)))
-	   (M2-jump-to-source-code filename linenum colnum linenum2 colnum2)))
-	((save-excursion
-	   (beginning-of-line)
-	   ;; example:      ../../m2/res.m2:210:45-214:6: --source code:
-	   ;; we also match lines beginning with
-	   ;; * output line numbers, e.g.,:
-	   ;;   o1 = ../../m2/res.m2:210:45-214:6:
-	   ;; * a pipe, for paths enclosed in a box, e.g.,:
-	   ;;   | ../../m2/res.m2:210:45-214:6:
-	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6))
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\):?"))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
-	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
-	       (linenum2 (if (match-beginning 5) (string-to-number (buffer-substring (match-beginning 5) (match-end 5)))))
-	       (colnum2 (if (match-beginning 6) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1)))
-	   (M2-jump-to-source-code filename linenum colnum linenum2 colnum2)))
-	((save-excursion
-	   (beginning-of-line)
-	   ;; example:      ../../m2/res.m2:210:45-214:6: --source code:
-	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)   (5      5)   (6      6)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\): "))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
-	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1))
-	       (linenum2 (string-to-number (buffer-substring (match-beginning 5) (match-end 5))))
-	       (colnum2 (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 6) (match-end 6))) 1)))
-	   (M2-jump-to-source-code filename linenum colnum)))
-	((save-excursion
-	   (beginning-of-line)
-	   ;; example:      ../../m2/res.m2:210:45: --source code:
-	   ;; example:      ./packages/Posets.m2:1329:1:(3):[7]: error: type mismatch: ...
-	   ;;                (1                     1)   (2       2)   (3      3)   (4      4)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\):\\([0-9]+\\):"))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3))))
-	       (colnum (if (match-beginning 4) (string-to-number (buffer-substring (match-beginning 4) (match-end 4))) 1)))
-	   (M2-jump-to-source-code filename linenum colnum)))
-	((save-excursion
-	   (beginning-of-line)
-	   ;; example:      ./packages/Posets.m2:1358: warning: documentation already provided for 'Posets :: moebiusFunction'
-	   ;;                (1                     1)   (2       2)   (3      3)
-	   (looking-at "^ *\\(o+[1-9][0-9]* = \\|| \\)?\\([^:\n]+\\):\\([0-9]+\\): warning: "))
-	 (let ((filename (buffer-substring (match-beginning 2) (match-end 2)))
-	       (linenum (string-to-number (buffer-substring (match-beginning 3) (match-end 3)))))
-	   (M2-jump-to-source-code filename linenum 1)))
-	(t (let ((comint-use-prompt-regexp t))
-	     (comint-send-input)))))
+  (let ((comint-use-prompt-regexp t))
+    (comint-send-input)))
+
+(define-obsolete-function-alias
+  'M2-send-to-program-or-jump-to-source-code 'M2-send-input "1.22")
 
 (defun M2--get-send-to-buffer ()
   "Helper function for `M2-send-to-program` and friends.  Gets buffer for
