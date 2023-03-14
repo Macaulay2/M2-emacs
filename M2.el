@@ -567,7 +567,7 @@ for more."
 	  (beginning-of-line)
 	  (if (bobp)
 	      0
-	      (previous-line 1)
+	      (forward-line -1)
 	      (M2-next-line-indent-amount))))
 
 (defun M2-in-front ()
