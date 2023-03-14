@@ -404,7 +404,8 @@ START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
 	  (let* ((send-it t)
 		 (cmd (if (and
 			  (equal (point) (point-max))
-			  (equal (current-buffer) (save-excursion (set-buffer send-to-buffer))))
+			  (equal (current-buffer)
+				 (with-current-buffer send-to-buffer)))
 			 (if (equal (point)
 				    (save-excursion
 				      (M2-to-end-of-prompt)
@@ -526,8 +527,7 @@ for more."
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
     (make-variable-buffer-local 'comint-scroll-show-maximum-output)
-    (save-excursion
-      (set-buffer "*M2*")
+    (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
 
 (defun M2-info-help (string)
@@ -608,8 +608,7 @@ for more."
 		       (indent-to i))))))
 
 (defvar M2-demo-buffer
-  (save-excursion
-    (set-buffer (get-buffer-create "*M2-demo-buffer*"))
+  (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
     (M2-mode)
     (current-buffer))
   "The buffer from which lines are obtained by M2-send-to-program when the
