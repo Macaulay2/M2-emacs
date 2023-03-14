@@ -411,7 +411,6 @@ START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
 				      (if (looking-at "[ \t]+") (goto-char (match-end 0)))
 				      (point)))
 			     (let* ((s (current-buffer))
-				    (db (set-buffer M2-demo-buffer))
 				    (bol (progn (beginning-of-line) (point)))
 				    (eol (progn (end-of-line) (point)))
 				    (eob (point-max))
@@ -523,9 +522,7 @@ for more."
 	      (set-frame-font ; use (w32-select-font) to get good font names under windows
 	       (cond ((eq window-system 'w32) "-*-Lucida Console-bold-r-*-*-19-142-*-*-c-*-*-ansi-")
 		     ((eq window-system 'x) "-adobe-courier-bold-r-normal--24-240-75-75-m-150-iso8859-1")
-		     (t "12x24")))))
-	 (width (frame-pixel-width))
-	 (height (frame-pixel-height)))
+		     (t "12x24"))))))
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
     (make-variable-buffer-local 'comint-scroll-show-maximum-output)
