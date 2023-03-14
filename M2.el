@@ -301,13 +301,6 @@ current window added to it."
 (defun M2-update-screen ()
     (set-window-start (selected-window) (window-start (selected-window))))
 
-(defun M2-dynamic-complete-symbol()
-  "Dynamic completion function for Macaulay2 symbols."
-  (declare (obsolete completion-at-point "Macaulay2 1.20"))
-  (interactive)
-  (let ((word (comint-word "a-zA-Z")))
-    (if word (comint-dynamic-simple-complete word M2-symbols))))
-
 (defun M2-completion-at-point ()
   "Function used for `completion-at-point-functions' in `M2-mode' and
 `M2-comint-mode'."
