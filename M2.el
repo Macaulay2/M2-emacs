@@ -526,7 +526,6 @@ for more."
 		     (t "12x24"))))))
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
-    (make-variable-buffer-local 'comint-scroll-show-maximum-output)
     (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
 
