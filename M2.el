@@ -653,6 +653,11 @@ that `M2-blink-region-flag' is non-nil"
                     (lambda ()
                       (delete-overlay M2-current-region-overlay)))))
 
+(defun M2-toggle-blink-region-flag ()
+  "Toggle the value of `M2-blink-region-flag'."
+  (interactive)
+  (setq M2-blink-region-flag (not M2-blink-region-flag)))
+
 ; enable syntax highlighting:
 (add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
 (add-hook 'M2-mode-hook 'turn-on-font-lock)
