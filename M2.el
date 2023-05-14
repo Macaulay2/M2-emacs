@@ -146,6 +146,8 @@
      ["Send buffer from here to Macaulay2"
       M2-send-buffer-from-here-to-end-to-program]
      ["Send paragraph to Macaulay2"   M2-send-paragraph-to-program]
+     ["Highlight evaluated region"    M2-toggle-blink-region-flag
+      :style toggle :selected M2-blink-region-flag]
      ["Newline and indent"            M2-newline-and-indent]
      ["Electric semicolon"            M2-electric-semi]
      ["Electric right brace"          M2-electric-right-brace]
