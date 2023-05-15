@@ -301,13 +301,6 @@ current window added to it."
 (defun M2-update-screen ()
     (set-window-start (selected-window) (window-start (selected-window))))
 
-(defun M2-dynamic-complete-symbol()
-  "Dynamic completion function for Macaulay2 symbols."
-  (declare (obsolete completion-at-point "Macaulay2 1.20"))
-  (interactive)
-  (let ((word (comint-word "a-zA-Z")))
-    (if word (comint-dynamic-simple-complete word M2-symbols))))
-
 (defun M2-completion-at-point ()
   "Function used for `completion-at-point-functions' in `M2-mode' and
 `M2-comint-mode'."
@@ -411,14 +404,14 @@ START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
 	  (let* ((send-it t)
 		 (cmd (if (and
 			  (equal (point) (point-max))
-			  (equal (current-buffer) (save-excursion (set-buffer send-to-buffer))))
+			  (equal (current-buffer)
+				 (with-current-buffer send-to-buffer)))
 			 (if (equal (point)
 				    (save-excursion
 				      (M2-to-end-of-prompt)
 				      (if (looking-at "[ \t]+") (goto-char (match-end 0)))
 				      (point)))
 			     (let* ((s (current-buffer))
-				    (db (set-buffer M2-demo-buffer))
 				    (bol (progn (beginning-of-line) (point)))
 				    (eol (progn (end-of-line) (point)))
 				    (eob (point-max))
@@ -530,14 +523,10 @@ for more."
 	      (set-frame-font ; use (w32-select-font) to get good font names under windows
 	       (cond ((eq window-system 'w32) "-*-Lucida Console-bold-r-*-*-19-142-*-*-c-*-*-ansi-")
 		     ((eq window-system 'x) "-adobe-courier-bold-r-normal--24-240-75-75-m-150-iso8859-1")
-		     (t "12x24")))))
-	 (width (frame-pixel-width))
-	 (height (frame-pixel-height)))
+		     (t "12x24"))))))
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
-    (make-variable-buffer-local 'comint-scroll-show-maximum-output)
-    (save-excursion
-      (set-buffer "*M2*")
+    (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
 
 (defun M2-info-help (string)
@@ -577,7 +566,7 @@ for more."
 	  (beginning-of-line)
 	  (if (bobp)
 	      0
-	      (previous-line 1)
+	      (forward-line -1)
 	      (M2-next-line-indent-amount))))
 
 (defun M2-in-front ()
@@ -618,8 +607,7 @@ for more."
 		       (indent-to i))))))
 
 (defvar M2-demo-buffer
-  (save-excursion
-    (set-buffer (get-buffer-create "*M2-demo-buffer*"))
+  (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
     (M2-mode)
     (current-buffer))
   "The buffer from which lines are obtained by M2-send-to-program when the
