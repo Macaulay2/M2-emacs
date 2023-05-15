@@ -146,6 +146,8 @@
      ["Send buffer from here to Macaulay2"
       M2-send-buffer-from-here-to-end-to-program]
      ["Send paragraph to Macaulay2"   M2-send-paragraph-to-program]
+     ["Highlight evaluated region"    M2-toggle-blink-region-flag
+      :style toggle :selected M2-blink-region-flag]
      ["Newline and indent"            M2-newline-and-indent]
      ["Electric semicolon"            M2-electric-semi]
      ["Electric right brace"          M2-electric-right-brace]
@@ -615,7 +617,7 @@ cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
-(defcustom M2-blink-region-flag nil
+(defcustom M2-blink-region-flag t
   "If non-nil, evaluated region is highlighted for `M2-blink-delay' seconds."
   :type 'boolean
   :group 'Macaulay2)
@@ -640,6 +642,11 @@ that `M2-blink-region-flag' is non-nil"
     (run-with-timer M2-blink-delay nil
                     (lambda ()
                       (delete-overlay M2-current-region-overlay)))))
+
+(defun M2-toggle-blink-region-flag ()
+  "Toggle the value of `M2-blink-region-flag'."
+  (interactive)
+  (setq M2-blink-region-flag (not M2-blink-region-flag)))
 
 ; enable syntax highlighting:
 (add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
