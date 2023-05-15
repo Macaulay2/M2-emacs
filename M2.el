@@ -379,7 +379,8 @@ can be executed with \\[M2-send-to-program]."
 (defvar M2-transform-file-match-alist
   '(("^stdio$" nil)
     ("^currentString$" nil)
-    ("^Macaulay2/Core/startup\\.m2\\.in$" nil))
+    ("^Macaulay2/Core/startup\\.m2\\.in$" nil)
+    ("^[0-9][0-9]$" nil))
   "List of filenames not to match in Macaulay2 output.")
 
 (defun M2-send-input ()
