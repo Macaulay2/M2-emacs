@@ -595,19 +595,24 @@ for more."
      (self-insert-command 1)
      (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (M2-newline-and-indent)))
 
+(defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
+  "Commands for which `M2-electric-tab' should insert a tab."
+  :type '(repeat function)
+  :group 'Macaulay2)
+
 (defun M2-electric-tab ()
-     (interactive)
-     (if (or (not (M2-in-front)) (M2-blank-line))
-	 (indent-to (+ (current-column) M2-indent-level))
-	 (let ((i (M2-this-line-indent-amount))
-	       (j (current-indentation)))
-	      (if (not (= i j))
-		  (progn
-		       (if (< i j)
-			    (delete-region (progn (beginning-of-line) (point))
-					   (progn (back-to-indentation) (point)))
-			    (back-to-indentation))
-		       (indent-to i))))))
+  "`indent-line-function' for Macaulay2.
+If called by command in `M2-insert-tab-commands', and if the point is either
+to right of non-whitespace characters in the same line or if the line
+is blank, then insert `M2-indent-level' spaces.  Otherwise, indent the
+line based on the depth of the parentheses in the code."
+  (interactive)
+  (indent-to
+   (prog1 (if (and (memq this-command M2-insert-tab-commands)
+		   (or (not (M2-in-front)) (M2-blank-line)))
+	      (+ (current-column) M2-indent-level)
+	    (M2-this-line-indent-amount))
+     (delete-horizontal-space))))
 
 (defvar M2-demo-buffer
   (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
