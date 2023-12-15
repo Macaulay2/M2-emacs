@@ -77,7 +77,6 @@
 ;; key bindings
 
 (define-key M2-mode-map "\177" 'backward-delete-char-untabify)
-(define-key M2-mode-map "\^M" 'M2-newline-and-indent)
 ;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
@@ -148,7 +147,6 @@
      ["Send paragraph to Macaulay2"   M2-send-paragraph-to-program]
      ["Highlight evaluated region"    M2-toggle-blink-region-flag
       :style toggle :selected M2-blink-region-flag]
-     ["Newline and indent"            M2-newline-and-indent]
      ["Electric semicolon"            M2-electric-semi]
      ["Electric right brace"          M2-electric-right-brace]
      ["Electric tab"                  M2-electric-tab]
@@ -559,7 +557,7 @@ for more."
      (interactive)
      (insert ?\;)
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
-	 (M2-newline-and-indent)))
+	 (newline nil t)))
 
 (defun M2-next-line-indent-amount ()
      (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
@@ -584,16 +582,13 @@ for more."
 	  (or (eobp)
 	      (progn (forward-char) (M2-blank-line)))))
 
-(defun M2-newline-and-indent ()
-     "Start a new line and indent it properly for Macaulay2 code."
-     (interactive)
-     (newline)
-     (indent-to (M2-this-line-indent-amount)))
+(define-obsolete-function-alias
+  'M2-newline-and-indent 'newline "1.23")
 
 (defun M2-electric-right-brace()
      (interactive)
      (self-insert-command 1)
-     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (M2-newline-and-indent)))
+     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
 
 (defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `M2-electric-tab' should insert a tab."
