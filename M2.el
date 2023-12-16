@@ -533,12 +533,11 @@ for more."
       (setq comint-scroll-show-maximum-output t))))
 
 (defun M2-info-help (string)
-  (save-excursion
-    (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
-	(let ((end (1+ (match-end 0))))
-	  (info-other-window (match-string 1 string))
-	  (substring string end))
-      string)))
+  (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
+      (let ((end (1+ (match-end 0))))
+	(save-excursion (info-other-window (match-string 1 string)))
+	(substring string end))
+    string))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
