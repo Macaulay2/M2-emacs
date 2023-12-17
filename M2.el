@@ -400,6 +400,10 @@ Gets buffer for Macaulay2 inferior process from minibuffer or history."
   "Helper function for `M2-send-to-program' and friends.
 Sends code between START and END to Macaulay2 inferior process in
 SEND-TO-BUFFER."
+  (unless (and (get-buffer send-to-buffer) (get-buffer-process send-to-buffer))
+    (user-error
+     "Start a Macaulay2 process first with `M-x M2' or `%s'."
+     (key-description (where-is-internal #'M2 overriding-local-map t))))
   (or (get-buffer-window send-to-buffer 'visible)
 	 (pop-to-buffer (prog1 (current-buffer) (pop-to-buffer send-to-buffer))))
      (select-window
