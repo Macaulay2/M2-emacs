@@ -404,8 +404,6 @@ SEND-TO-BUFFER."
     (user-error
      "Start a Macaulay2 process first with `M-x M2' or `%s'."
      (key-description (where-is-internal #'M2 overriding-local-map t))))
-  (or (get-buffer-window send-to-buffer 'visible)
-	 (pop-to-buffer (prog1 (current-buffer) (pop-to-buffer send-to-buffer))))
      (select-window
       (prog1
 	  (selected-window)
@@ -447,6 +445,7 @@ SEND-TO-BUFFER."
 	      (goto-char (point-max))
 	      (set-window-point (get-buffer-window send-to-buffer 'visible) (point))
 	      (if send-it (comint-send-input)))))))
+  (display-buffer send-to-buffer '(nil (inhibit-same-window . t)))
 
 (defun M2-send-region-to-program (send-to-buffer)
   "Send the current region to Macaulay2.  See `M2-send-to-program' for more."
