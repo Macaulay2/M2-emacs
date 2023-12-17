@@ -388,8 +388,8 @@ can be executed with \\[M2-send-to-program]."
   'M2-send-to-program-or-jump-to-source-code 'M2-send-input "1.22")
 
 (defun M2--get-send-to-buffer ()
-  "Helper function for `M2-send-to-program` and friends.  Gets buffer for
-Macaulay2 inferior process from minibuffer or history."
+  "Helper function for `M2-send-to-program' and friends.
+Gets buffer for Macaulay2 inferior process from minibuffer or history."
   (list
    (cond (current-prefix-arg
 	  (read-from-minibuffer "buffer to send command to: " "*M2*" nil nil
