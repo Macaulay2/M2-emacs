@@ -397,8 +397,9 @@ Gets buffer for Macaulay2 inferior process from minibuffer or history."
 	 (t (car M2-send-to-buffer-history)))))
 
 (defun M2--send-to-program-helper (send-to-buffer start end)
-  "Helper function for `M2-send-to-program` and friends.  Sends code between
-START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
+  "Helper function for `M2-send-to-program' and friends.
+Sends code between START and END to Macaulay2 inferior process in
+SEND-TO-BUFFER."
   (or (get-buffer-window send-to-buffer 'visible)
 	 (pop-to-buffer (prog1 (current-buffer) (pop-to-buffer send-to-buffer))))
      (select-window
