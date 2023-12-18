@@ -82,6 +82,7 @@
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
 (define-key M2-mode-map (kbd "<C-return>") 'M2-send-to-program)
+(define-key M2-mode-map (kbd "<f11>") 'M2-send-to-program)
 (define-key M2-mode-map (kbd "C-c C-j") 'M2-send-line-to-program)
 (define-key M2-mode-map (kbd "C-c C-r") 'M2-send-region-to-program)
 (define-key M2-mode-map (kbd "C-c C-b") 'M2-send-buffer-to-program)
@@ -108,12 +109,12 @@
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
 (define-key M2-comint-mode-map "\r" 'M2-send-input)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
+(define-key M2-comint-mode-map (kbd "<f11>") 'comint-send-input)
 
 (mapc
  (function
   (lambda (mode-map)
     (define-key mode-map [ f12 ] 'M2) ; the user may want to make this one global
-    (define-key mode-map [ f11 ] 'M2-send-to-program) ; the user may want to make this one global
     (define-key mode-map [ (meta f12) ] 'M2-demo)
     (define-key mode-map [ (control f11) ] 'M2-switch-to-demo-buffer)
     (define-key mode-map [ (meta f11) ] 'M2-set-demo-buffer)
