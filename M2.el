@@ -106,7 +106,6 @@
 (define-key M2-comint-mode-map [ (control C) r ] 'scroll-right)
 ;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
-(define-key M2-comint-mode-map "\r" 'M2-send-input)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
 
 (mapc
@@ -159,7 +158,7 @@
   "Menu for Macaulay2 Interaction major mode"
   (append
    '("Macaulay2 Interaction"
-     ["Send to Macaulay2"   M2-send-input]
+     ["Send to Macaulay2"   comint-send-input]
      ["Go to end of prompt" M2-to-end-of-prompt]
      ["Center point"        M2-position-point]
      ["Jog left"            M2-jog-left]
@@ -378,14 +377,11 @@ can be executed with \\[M2-send-to-program]."
     ("^[0-9][0-9]$" nil))
   "List of filenames not to match in Macaulay2 output.")
 
-(defun M2-send-input ()
-  "Send the input to the Macaulay2 interpreter using `comint-send-input'."
-  (interactive)
-  (let ((comint-use-prompt-regexp t))
-    (comint-send-input)))
+(define-obsolete-function-alias
+  'M2-send-input 'comint-send-input "1.23")
 
 (define-obsolete-function-alias
-  'M2-send-to-program-or-jump-to-source-code 'M2-send-input "1.22")
+  'M2-send-to-program-or-jump-to-source-code 'comint-send-input "1.22")
 
 (defun M2--get-send-to-buffer ()
   "Helper function for `M2-send-to-program` and friends.  Gets buffer for
