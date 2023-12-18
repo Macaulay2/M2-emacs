@@ -404,48 +404,14 @@ SEND-TO-BUFFER."
     (user-error
      "Start a Macaulay2 process first with `M-x M2' or `%s'."
      (key-description (where-is-internal #'M2 overriding-local-map t))))
-     (select-window
-      (prog1
-	  (selected-window)
-	  (let* ((send-it t)
-		 (cmd (if (and
-			  (equal (point) (point-max))
-			  (equal (current-buffer)
-				 (with-current-buffer send-to-buffer)))
-			 (if (equal (point)
-				    (save-excursion
-				      (M2-to-end-of-prompt)
-				      (if (looking-at "[ \t]+") (goto-char (match-end 0)))
-				      (point)))
-			     (let* ((s (current-buffer))
-				    (bol (progn (beginning-of-line) (point)))
-				    (eol (progn (end-of-line) (point)))
-				    (eob (point-max))
-				    (cmd (if (equal bol eob)
-					     (concat "-- end of buffer "
-						     (if (stringp M2-demo-buffer)
-							 M2-demo-buffer
-						       (buffer-name M2-demo-buffer)))
-					   (buffer-substring bol eol))))
-			       (end-of-line)
-			       (forward-line)
-			       (set-window-point
-				(get-buffer-window (current-buffer) 'visible)
-				(point))
-			       (set-buffer s)
-			       (setq send-it nil)
-			       cmd)
-			   "")
-			(M2-blink-region start end)
-			(buffer-substring start end))))
-	    (progn
-	      (select-window (get-buffer-window (set-buffer send-to-buffer) 'visible))
-	      (goto-char (point-max))
-	      (insert cmd)
-	      (goto-char (point-max))
-	      (set-window-point (get-buffer-window send-to-buffer 'visible) (point))
-	      (if send-it (comint-send-input)))))))
   (display-buffer send-to-buffer '(nil (inhibit-same-window . t)))
+  (let ((cmd (buffer-substring start end)))
+    (M2-blink-region start end)
+    (with-current-buffer send-to-buffer
+      (goto-char (point-max))
+      (insert cmd)
+      (comint-send-input)
+      (set-window-point (get-buffer-window send-to-buffer 'visible) (point)))))
 
 (defun M2-send-region-to-program (send-to-buffer)
   "Send the current region to Macaulay2.  See `M2-send-to-program' for more."
