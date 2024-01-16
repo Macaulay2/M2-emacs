@@ -50,7 +50,7 @@
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
-  (add-hook 'comint-output-filter-functions 'M2-info-help nil t)
+  (add-hook 'comint-preoutput-filter-functions 'M2-info-help nil t)
   (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
   (setq-local compilation-transform-file-match-alist
 	      M2-transform-file-match-alist)
@@ -533,9 +533,11 @@ for more."
       (setq comint-scroll-show-maximum-output t))))
 
 (defun M2-info-help (string)
-  (save-excursion
-    (when (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
-      (info-other-window (match-string 1 string)))))
+  (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
+      (let ((end (1+ (match-end 0))))
+	(save-excursion (info-other-window (match-string 1 string)))
+	(substring string end))
+    string))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
