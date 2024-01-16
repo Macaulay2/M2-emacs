@@ -81,6 +81,7 @@
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
 (define-key M2-mode-map (kbd "<C-return>") 'M2-send-to-program)
+(define-key M2-mode-map (kbd "<f11>") 'M2-send-to-program)
 (define-key M2-mode-map (kbd "C-c C-j") 'M2-send-line-to-program)
 (define-key M2-mode-map (kbd "C-c C-r") 'M2-send-region-to-program)
 (define-key M2-mode-map (kbd "C-c C-b") 'M2-send-buffer-to-program)
@@ -106,12 +107,12 @@
 ;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
+(define-key M2-comint-mode-map (kbd "<f11>") 'comint-send-input)
 
 (mapc
  (function
   (lambda (mode-map)
     (define-key mode-map [ f12 ] 'M2) ; the user may want to make this one global
-    (define-key mode-map [ f11 ] 'M2-send-to-program) ; the user may want to make this one global
     (define-key mode-map [ (meta f12) ] 'M2-demo)
     (define-key mode-map [ (control f11) ] 'M2-switch-to-demo-buffer)
     (define-key mode-map [ (meta f11) ] 'M2-set-demo-buffer)
@@ -382,8 +383,8 @@ can be executed with \\[M2-send-to-program]."
   'M2-send-to-program-or-jump-to-source-code 'comint-send-input "1.22")
 
 (defun M2--get-send-to-buffer ()
-  "Helper function for `M2-send-to-program` and friends.  Gets buffer for
-Macaulay2 inferior process from minibuffer or history."
+  "Helper function for `M2-send-to-program' and friends.
+Gets buffer for Macaulay2 inferior process from minibuffer or history."
   (list
    (cond (current-prefix-arg
 	  (read-from-minibuffer "buffer to send command to: " "*M2*" nil nil
@@ -391,51 +392,21 @@ Macaulay2 inferior process from minibuffer or history."
 	 (t (car M2-send-to-buffer-history)))))
 
 (defun M2--send-to-program-helper (send-to-buffer start end)
-  "Helper function for `M2-send-to-program` and friends.  Sends code between
-START and END to Macaulay2 inferior process in SEND-TO-BUFFER."
-  (or (get-buffer-window send-to-buffer 'visible)
-	 (pop-to-buffer (prog1 (current-buffer) (pop-to-buffer send-to-buffer))))
-     (select-window
-      (prog1
-	  (selected-window)
-	  (let* ((send-it t)
-		 (cmd (if (and
-			  (equal (point) (point-max))
-			  (equal (current-buffer)
-				 (with-current-buffer send-to-buffer)))
-			 (if (equal (point)
-				    (save-excursion
-				      (M2-to-end-of-prompt)
-				      (if (looking-at "[ \t]+") (goto-char (match-end 0)))
-				      (point)))
-			     (let* ((s (current-buffer))
-				    (bol (progn (beginning-of-line) (point)))
-				    (eol (progn (end-of-line) (point)))
-				    (eob (point-max))
-				    (cmd (if (equal bol eob)
-					     (concat "-- end of buffer "
-						     (if (stringp M2-demo-buffer)
-							 M2-demo-buffer
-						       (buffer-name M2-demo-buffer)))
-					   (buffer-substring bol eol))))
-			       (end-of-line)
-			       (forward-line)
-			       (set-window-point
-				(get-buffer-window (current-buffer) 'visible)
-				(point))
-			       (set-buffer s)
-			       (setq send-it nil)
-			       cmd)
-			   "")
-			(M2-blink-region start end)
-			(buffer-substring start end))))
-	    (progn
-	      (select-window (get-buffer-window (set-buffer send-to-buffer) 'visible))
-	      (goto-char (point-max))
-	      (insert cmd)
-	      (goto-char (point-max))
-	      (set-window-point (get-buffer-window send-to-buffer 'visible) (point))
-	      (if send-it (comint-send-input)))))))
+  "Helper function for `M2-send-to-program' and friends.
+Sends code between START and END to Macaulay2 inferior process in
+SEND-TO-BUFFER."
+  (unless (and (get-buffer send-to-buffer) (get-buffer-process send-to-buffer))
+    (user-error
+     "Start a Macaulay2 process first with `M-x M2' or `%s'."
+     (key-description (where-is-internal #'M2 overriding-local-map t))))
+  (display-buffer send-to-buffer '(nil (inhibit-same-window . t)))
+  (let ((cmd (buffer-substring start end)))
+    (M2-blink-region start end)
+    (with-current-buffer send-to-buffer
+      (goto-char (point-max))
+      (insert cmd)
+      (comint-send-input)
+      (set-window-point (get-buffer-window send-to-buffer 'visible) (point)))))
 
 (defun M2-send-region-to-program (send-to-buffer)
   "Send the current region to Macaulay2.  See `M2-send-to-program' for more."
