@@ -351,8 +351,8 @@ can be executed with \\[M2-send-to-program]."
     ;; error messages, e.g.,
     ;; i1 : load "packages/Macaulay2Doc/demo1.m2"; g 2
     ;; packages/Macaulay2Doc/demo1.m2:8:12:(3):[2]: error: division by zero
-    ;;  (1           1)   (2      2)   (3      3)
-    ("\\([^:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
+    ;;  (1              1)   (2      2)   (3      3)
+    ("\\([^\\[:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
      1 2 3)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; net(FilePosition) (debugging.m2) ;;
@@ -366,8 +366,8 @@ can be executed with \\[M2-send-to-program]."
     ;; no end line/column numbers, e.g.,:
     ;; i2 : locate makeDocumentTag rank
     ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
-    ;;  (1           1)   (2      2)   (3      3)
-    ("\\([^:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\)"
+    ;;  (1              1)   (2      2)   (3      3)
+    ("\\([^\\[:\n\r\s]+\\):\\([0-9]+\\):\\([0-9]+\\)"
      1 2 3 0))
   "Regular expressions for matching file positions in Macaulay2 output.")
 
