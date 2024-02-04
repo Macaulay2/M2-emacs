@@ -532,11 +532,15 @@ for more."
      (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
 
 (defun M2-this-line-indent-amount ()
+     "Determine how much to indent the current line."
      (save-excursion
 	  (beginning-of-line)
 	  (if (bobp)
 	      0
 	      (forward-line -1)
+	      ;; if the previous line is blank, then keep going
+	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
+		(forward-line -1))
 	      (M2-next-line-indent-amount))))
 
 (defun M2-in-front ()
