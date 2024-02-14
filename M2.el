@@ -497,6 +497,18 @@ for more."
     (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
 
+(defun M2-get-input-from-demo-buffer ()
+  "Copy the current line from `M2-demo-buffer' to the prompt."
+  (interactive)
+  (insert (with-current-buffer M2-demo-buffer
+	    (prog1
+		(if (eobp)
+		    (concat "-- end of buffer " (buffer-name (current-buffer)))
+		  (buffer-substring
+		   (prog2 (M2-to-end-of-prompt) (point))
+		   (line-end-position)))
+	      (forward-line)))))
+
 (defun M2-info-help (string)
   (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
       (let ((end (1+ (match-end 0))))
