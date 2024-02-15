@@ -465,7 +465,7 @@ for more."
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
-`M2-send-to-program' can obtain lines from this buffer."
+`M2-get-input-from-demo-buffer' can obtain lines from this buffer."
   (interactive)
   (setq M2-demo-buffer (current-buffer)))
 
@@ -608,8 +608,8 @@ line based on the depth of the parentheses in the code."
   (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
     (M2-mode)
     (current-buffer))
-  "The buffer from which lines are obtained by M2-send-to-program when the
-cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
+  "The buffer from which lines are obtained by `M2-get-input-from-demo-buffer'.
+Set it with `M2-set-demo-buffer'." )
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
