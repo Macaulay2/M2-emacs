@@ -429,12 +429,9 @@ SEND-TO-BUFFER."
      "Send the current line except for a possible prompt, or the region, if the
 mark is active, to Macaulay2 in its buffer, making its window visible.
 Afterwards, in the case where the mark is not active, move the cursor to
-the next line.  Alternatively, if the point is at a prompt or a blank line
-at the end of the buffer *M2*, get the next line of input from demo buffer
-set by `M2-set-demo-buffer', or if it's at the end of the buffer *M2* with a
-line of input already there, submit it.  With a prefix argument, the name of
-the buffer to which this and future uses of the command (in this buffer) should
-be sent can be entered, with history."
+the next line.  With a prefix argument, the name of the buffer to
+which this and future uses of the command (in this buffer) should be
+sent can be entered, with history."
      (interactive (M2--get-send-to-buffer))
      (if (region-active-p)
 	 (M2-send-region-to-program send-to-buffer)
