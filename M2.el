@@ -500,7 +500,9 @@ for more."
 (defun M2-info-help (string)
   (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
       (let ((end (1+ (match-end 0))))
-	(save-excursion (info-other-window (match-string 1 string)))
+	(save-excursion
+	  (with-demoted-errors "%S"
+	    (info-other-window (match-string 1 string))))
 	(substring string end))
     string))
 
