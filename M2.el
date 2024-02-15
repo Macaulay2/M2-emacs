@@ -159,6 +159,9 @@
   (append
    '("Macaulay2 Interaction"
      ["Send to Macaulay2"   comint-send-input]
+     ["Get demo input"      M2-get-input-from-demo-buffer]
+     ["Send to M2 or get demo input"
+      M2-send-input-or-get-input-from-demo-buffer]
      ["Go to end of prompt" M2-to-end-of-prompt]
      ["Center point"        M2-position-point]
      ["Jog left"            M2-jog-left]
