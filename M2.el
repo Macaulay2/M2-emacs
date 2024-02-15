@@ -107,7 +107,8 @@
 ;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
-(define-key M2-comint-mode-map (kbd "<f11>") 'comint-send-input)
+(define-key M2-comint-mode-map (kbd "<f11>")
+	    #'M2-send-input-or-get-input-from-demo-buffer)
 
 (mapc
  (function
@@ -158,6 +159,9 @@
   (append
    '("Macaulay2 Interaction"
      ["Send to Macaulay2"   comint-send-input]
+     ["Get demo input"      M2-get-input-from-demo-buffer]
+     ["Send to M2 or get demo input"
+      M2-send-input-or-get-input-from-demo-buffer]
      ["Go to end of prompt" M2-to-end-of-prompt]
      ["Center point"        M2-position-point]
      ["Jog left"            M2-jog-left]
@@ -425,12 +429,9 @@ SEND-TO-BUFFER."
      "Send the current line except for a possible prompt, or the region, if the
 mark is active, to Macaulay2 in its buffer, making its window visible.
 Afterwards, in the case where the mark is not active, move the cursor to
-the next line.  Alternatively, if the point is at a prompt or a blank line
-at the end of the buffer *M2*, get the next line of input from demo buffer
-set by `M2-set-demo-buffer', or if it's at the end of the buffer *M2* with a
-line of input already there, submit it.  With a prefix argument, the name of
-the buffer to which this and future uses of the command (in this buffer) should
-be sent can be entered, with history."
+the next line.  With a prefix argument, the name of the buffer to
+which this and future uses of the command (in this buffer) should be
+sent can be entered, with history."
      (interactive (M2--get-send-to-buffer))
      (if (region-active-p)
 	 (M2-send-region-to-program send-to-buffer)
@@ -464,7 +465,7 @@ for more."
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
-`M2-send-to-program' can obtain lines from this buffer."
+`M2-get-input-from-demo-buffer' can obtain lines from this buffer."
   (interactive)
   (setq M2-demo-buffer (current-buffer)))
 
@@ -488,14 +489,32 @@ for more."
 		  (modeline . nil);; doesn't work
 		  (name . "DEMO"))))
 	      (toggle-scroll-bar 0)
-	      (set-frame-font ; use (w32-select-font) to get good font names under windows
-	       (cond ((eq window-system 'w32) "-*-Lucida Console-bold-r-*-*-19-142-*-*-c-*-*-ansi-")
-		     ((eq window-system 'x) "-adobe-courier-bold-r-normal--24-240-75-75-m-150-iso8859-1")
-		     (t "12x24"))))))
+	      (set-frame-font (font-spec :size 24.0)))))
     (modify-frame-parameters f '((left + 20) (top + 30)))
     ; (M2)
     (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
+
+(defun M2-get-input-from-demo-buffer ()
+  "Copy the current line from `M2-demo-buffer' to the prompt."
+  (interactive)
+  (insert (with-current-buffer M2-demo-buffer
+	    (prog1
+		(if (eobp)
+		    (concat "-- end of buffer " (buffer-name (current-buffer)))
+		  (buffer-substring
+		   (prog2 (M2-to-end-of-prompt) (point))
+		   (line-end-position)))
+	      (forward-line)))))
+
+(defun M2-send-input-or-get-input-from-demo-buffer ()
+  "Either send input to Macaulay2 or get input from the demo buffer.
+If current line is blank, then copy the current line of `M2-demo-buffer'.
+Otherwise, send the input to Macaulay2."
+  (interactive)
+  (if (save-excursion (M2-to-end-of-prompt) (looking-at-p "[[:blank:]]*$"))
+      (M2-get-input-from-demo-buffer)
+    (comint-send-input)))
 
 (defun M2-info-help (string)
   (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
@@ -586,8 +605,8 @@ line based on the depth of the parentheses in the code."
   (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
     (M2-mode)
     (current-buffer))
-  "The buffer from which lines are obtained by M2-send-to-program when the
-cursor is at the end of the buffer.  Set it with M2-set-demo-buffer." )
+  "The buffer from which lines are obtained by `M2-get-input-from-demo-buffer'.
+Set it with `M2-set-demo-buffer'." )
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
