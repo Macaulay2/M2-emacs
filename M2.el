@@ -509,6 +509,15 @@ for more."
 		   (line-end-position)))
 	      (forward-line)))))
 
+(defun M2-send-input-or-get-input-from-demo-buffer ()
+  "Either send input to Macaulay2 or get input from the demo buffer.
+If current line is blank, then copy the current line of `M2-demo-buffer'.
+Otherwise, send the input to Macaulay2."
+  (interactive)
+  (if (save-excursion (M2-to-end-of-prompt) (looking-at-p "[[:blank:]]*$"))
+      (M2-get-input-from-demo-buffer)
+    (comint-send-input)))
+
 (defun M2-info-help (string)
   (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
       (let ((end (1+ (match-end 0))))
