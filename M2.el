@@ -107,7 +107,8 @@
 ;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
 (define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
 ;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
-(define-key M2-comint-mode-map (kbd "<f11>") 'comint-send-input)
+(define-key M2-comint-mode-map (kbd "<f11>")
+	    #'M2-send-input-or-get-input-from-demo-buffer)
 
 (mapc
  (function
