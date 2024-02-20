@@ -368,9 +368,9 @@ can be executed with \\[M2-send-to-program]."
     ;; no end line/column numbers, e.g.,:
     ;; i2 : locate makeDocumentTag rank
     ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
-     1 2 3 0))
     ;;  (1                                           1)   (2      2)   (3      3)
     ("\\(?:\\(?1:[^\\[:\n\r\s]+\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)"
+     1 2 3 0))
   "Regular expressions for matching file positions in Macaulay2 output.")
 
 (defvar M2-transform-file-match-alist
