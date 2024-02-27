@@ -1,5 +1,5 @@
 ;;; M2-mode.el --- Major mode for editing Macaulay2 source core -*- lexical-binding: t -*-
-;; Version: 1.1
+;; Version: 1.23
 ;; Keywords: languages Macaulay2
 ;; URL: https://github.com/Macaulay2/M2-emacs
 ;; Package-Requires: ((emacs "24.1"))
