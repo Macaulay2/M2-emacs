@@ -1,4 +1,4 @@
--- Auto-generated for Macaulay2-1.21. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.23. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
@@ -62,7 +62,7 @@ If that doesn't work, please see "teaching emacs how to find M2-init.el" and
 
 
 You may wish to bind the emacs function M2-send-to-program to a global
-keystroke for ease of use; this is done automatically for in Macaulay2 buffers.
+keystroke for ease of use; this is done automatically in Macaulay2 buffers.
 For example, the following emacs code will bind it to the function key f11.
 
 
