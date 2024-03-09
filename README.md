@@ -59,7 +59,7 @@ git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/Macaula
 2. Add the following to your Emacs init file:
 ```elisp
 (add-to-list 'load-path "~/.emacs.d/site-lisp/Macaulay2")
-(require 'M2-mode)
+(require 'M2)
 ```
 
 Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/Macaulay2` directory.
