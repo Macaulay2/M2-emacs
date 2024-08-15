@@ -50,6 +50,7 @@
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
   (M2-common)
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
+  (add-hook 'comint-input-filter-functions #'M2-comint-forget-errors nil t)
   (add-hook 'comint-preoutput-filter-functions 'M2-info-help nil t)
   (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
   (setq-local compilation-transform-file-match-alist
@@ -525,6 +526,15 @@ Otherwise, send the input to Macaulay2."
 	    (info-other-window (match-string 1 string))))
 	(substring string end))
     string))
+
+(defun M2-comint-forget-errors (string)
+  "Run `compilation-forget-errors' to flush compilation mode's cache.
+Otherwise, jumping to source will go to the wrong location when a file has
+been modified and reloaded.  STRING is ignored, but we need it so that this
+function can be added to `comint-input-filter-functions' so that it is run each
+time we send new input to the M2 process."
+  (ignore string)
+  (compilation-forget-errors))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
