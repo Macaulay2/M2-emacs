@@ -423,7 +423,9 @@ SEND-TO-BUFFER."
   (M2--send-to-program-helper send-to-buffer
 			      (save-excursion (M2-to-end-of-prompt) (point))
 			      (line-end-position))
-  (forward-line))
+  (forward-line)
+  ;; add a newline after a nonempty line at the end of the buffer
+  (when (and (eobp) (not (bolp))) (newline)))
 
 (defun M2-send-to-program (send-to-buffer)
      "Send the current line except for a possible prompt, or the region, if the
