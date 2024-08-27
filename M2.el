@@ -354,8 +354,8 @@ can be executed with \\[M2-send-to-program]."
     ;; error messages, e.g.,
     ;; i1 : load "packages/Macaulay2Doc/demo1.m2"; g 2
     ;; packages/Macaulay2Doc/demo1.m2:8:12:(3):[2]: error: division by zero
-    ;;  (1                                            1)   (2      2)   (3      3)
-    ("\\(?:\\(?1:[^\\[{:\n\r\s]+\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
+    ;;  (1                                                           1)   (2      2)   (3      3)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
      1 2 3)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; net(FilePosition) (debugging.m2) ;;
@@ -363,14 +363,14 @@ can be executed with \\[M2-send-to-program]."
     ;; start & end line/column numbers, e.g.,:
     ;; i1 : locate (rank, Matrix)
     ;; o1 = m2/matrix1.m2:663:19-666:20
-    ;;  (1                                            1)   (2      2)   (3      3)   (4      4)   (5      5)
-    ("\\(?:\\(?1:[^\\[{:\n\r\s]+\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)"
+    ;;  (1                                                           1)   (2      2)   (3      3)   (4      4)   (5      5)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)"
      1 (2 . 4) (3 . 5) 0)
     ;; no end line/column numbers, e.g.,:
     ;; i2 : locate makeDocumentTag rank
     ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
-    ;;  (1                                            1)   (2      2)   (3      3)
-    ("\\(?:\\(?1:[^\\[{:\n\r\s]+\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)"
+    ;;  (1                                                          1)   (2      2)   (3      3)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)"
      1 2 3 0))
   "Regular expressions for matching file positions in Macaulay2 output.")
 
