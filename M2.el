@@ -535,6 +535,8 @@ Otherwise, send the input to Macaulay2."
 	(substring string end))
     string))
 
+(declare-function compilation-forget-errors "compile")
+
 (defun M2-comint-forget-errors (string)
   "Run `compilation-forget-errors' to flush compilation mode's cache.
 Otherwise, jumping to source will go to the wrong location when a file has
