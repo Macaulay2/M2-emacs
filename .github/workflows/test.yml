@@ -1,0 +1,16 @@
+name: Test
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Emacs
+        run: sudo apt-get install -y emacs-nox
+      - name: Byte-compile
+        run: |
+          emacs --batch --eval '(setq byte-compile-error-on-warn t)' \
+              --eval '(add-to-list (quote load-path) ".")'           \
+              -f batch-byte-compile M2*.el M2-symbols.el.gz
