@@ -5,15 +5,14 @@
   '( @M2SYMBOLS@ )
   "A list of the symbols available in Macaulay2, for use with dynamic completion." )
 
-(let ((max-specpdl-size 1000)) ; needed for passing long long lists to regexp-opt
-  (defconst M2-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
-      "Regular expression for Macaulay2 keywords")
-  (defconst M2-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
-      "Regular expression for Macaulay2 types")
-  (defconst M2-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
-      "Regular expression for Macaulay2 functions")
-  (defconst M2-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
-      "Regular expression for Macaulay2 constants"))
+(defconst M2-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
+  "Regular expression for Macaulay2 keywords")
+(defconst M2-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
+  "Regular expression for Macaulay2 types")
+(defconst M2-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
+  "Regular expression for Macaulay2 functions")
+(defconst M2-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
+  "Regular expression for Macaulay2 constants")
 
 (defconst M2-comint-prompt-regexp "^\\([ \t]*\\(i*[1-9][0-9]* :\\|o*[1-9][0-9]* =\\) \\)?"
   "Regular expression for the Macaulay2 prompt")
