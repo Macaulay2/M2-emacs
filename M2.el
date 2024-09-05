@@ -45,6 +45,40 @@
 ;; M2-comint-mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar M2-error-regexp-alist
+  '(
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; printMessage (stdiop.d) ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; error messages, e.g.,
+    ;; i1 : load "packages/Macaulay2Doc/demo1.m2"; g 2
+    ;; packages/Macaulay2Doc/demo1.m2:8:12:(3):[2]: error: division by zero
+    ;;  (1                                                           1)   (2      2)   (3      3)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
+     1 2 3)
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; net(FilePosition) (debugging.m2) ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; start & end line/column numbers, e.g.,:
+    ;; i1 : locate (rank, Matrix)
+    ;; o1 = m2/matrix1.m2:663:19-666:20
+    ;;  (1                                                           1)   (2      2)   (3      3)   (4      4)   (5      5)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)"
+     1 (2 . 4) (3 . 5) 0)
+    ;; no end line/column numbers, e.g.,:
+    ;; i2 : locate makeDocumentTag rank
+    ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
+    ;;  (1                                                          1)   (2      2)   (3      3)
+    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)"
+     1 2 3 0))
+  "Regular expressions for matching file positions in Macaulay2 output.")
+
+(defvar M2-transform-file-match-alist
+  '(("^stdio$" nil)
+    ("^currentString$" nil)
+    ("^[0-9][0-9]$" nil))
+  "List of filenames not to match in Macaulay2 output.")
+
 ;;;###autoload
 (define-derived-mode M2-comint-mode comint-mode "Macaulay2 Interaction"
   "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
@@ -126,12 +160,13 @@
 
 ;; menus
 
-(setq M2-common-menu
+(defvar M2-common-menu
       '(["Match previous bracketed input" M2-match-previous-bracketed-input]
 	["Match next bracketed input"     M2-match-next-bracketed-input]
 	["Set demo buffer"                M2-set-demo-buffer]
 	["Switch to demo buffer"          M2-switch-to-demo-buffer]
-	["Start demo"                     M2-demo]))
+	["Start demo"                     M2-demo])
+      "Common parts of menus for both `M2-mode' and `M2-comint-mode'.")
 
 (easy-menu-define M2-menu M2-mode-map
   "Menu for Macaulay2 major mode"
@@ -346,40 +381,6 @@ can be executed with \\[M2-send-to-program]."
      (re-search-backward "<<<")
      (match-end 0))))
 
-(defvar M2-error-regexp-alist
-  '(
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; printMessage (stdiop.d) ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; error messages, e.g.,
-    ;; i1 : load "packages/Macaulay2Doc/demo1.m2"; g 2
-    ;; packages/Macaulay2Doc/demo1.m2:8:12:(3):[2]: error: division by zero
-    ;;  (1                                                           1)   (2      2)   (3      3)
-    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\):([0-9]+):\\[[0-9]+\\]"
-     1 2 3)
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; net(FilePosition) (debugging.m2) ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; start & end line/column numbers, e.g.,:
-    ;; i1 : locate (rank, Matrix)
-    ;; o1 = m2/matrix1.m2:663:19-666:20
-    ;;  (1                                                           1)   (2      2)   (3      3)   (4      4)   (5      5)
-    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)-\\([0-9]+\\):\\([0-9]+\\)"
-     1 (2 . 4) (3 . 5) 0)
-    ;; no end line/column numbers, e.g.,:
-    ;; i2 : locate makeDocumentTag rank
-    ;; o2 = ../Macaulay2Doc/functions/rank-doc.m2:34:0
-    ;;  (1                                                          1)   (2      2)   (3      3)
-    ("\\(?:\\(?1:[[:alnum:]/._][[:alnum:]/._-]*\\)\\|\"\\(?1:.+\\)\"\\):\\([0-9]+\\):\\([0-9]+\\)"
-     1 2 3 0))
-  "Regular expressions for matching file positions in Macaulay2 output.")
-
-(defvar M2-transform-file-match-alist
-  '(("^stdio$" nil)
-    ("^currentString$" nil)
-    ("^[0-9][0-9]$" nil))
-  "List of filenames not to match in Macaulay2 output.")
-
 (define-obsolete-function-alias
   'M2-send-input 'comint-send-input "1.23")
 
@@ -464,6 +465,13 @@ for more."
 	(start (progn (backward-paragraph) (point))))
     (M2--send-to-program-helper send-to-buffer start end))
   (forward-paragraph))
+
+(defvar M2-demo-buffer
+  (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
+    (M2-mode)
+    (current-buffer))
+  "The buffer from which lines are obtained by `M2-get-input-from-demo-buffer'.
+Set it with `M2-set-demo-buffer'." )
 
 (defun M2-set-demo-buffer()
   "Set the variable M2-demo-buffer to the current buffer, so that later,
@@ -613,13 +621,6 @@ line based on the depth of the parentheses in the code."
 	      (+ (current-column) M2-indent-level)
 	    (M2-this-line-indent-amount))
      (delete-horizontal-space))))
-
-(defvar M2-demo-buffer
-  (with-current-buffer (get-buffer-create "*M2-demo-buffer*")
-    (M2-mode)
-    (current-buffer))
-  "The buffer from which lines are obtained by `M2-get-input-from-demo-buffer'.
-Set it with `M2-set-demo-buffer'." )
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
