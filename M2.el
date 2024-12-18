@@ -585,16 +585,11 @@ time we send new input to the M2 process."
 (if (not (boundp 'font-lock-constant-face))
     (setq font-lock-constant-face font-lock-function-name-face))
 
-(defun M2-parse-line ()
-     (save-excursion
-       (let (eol)
-	 (end-of-line)
-	 (setq eol (point))
-	 (beginning-of-line)
-	 (parse-partial-sexp (point) eol))))
-
 (defun M2-paren-change ()
-     (car (M2-parse-line)))
+  "Return change in paren depth on current line."
+  (save-excursion
+    (car (parse-partial-sexp (prog2 (beginning-of-line) (point))
+			     (prog2 (end-of-line) (point))))))
 
 (defun M2-electric-semi ()
      (interactive)
