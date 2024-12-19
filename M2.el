@@ -63,6 +63,9 @@
     (M2-define-common-keys map)
     (define-key map (kbd "DEL") #'backward-delete-char-untabify)
     (define-key map (kbd ";") #'M2-electric-semi)
+    (define-key map (kbd ")") #'M2-electric-right-brace)
+    (define-key map (kbd "]") #'M2-electric-right-brace)
+    (define-key map (kbd "}") #'M2-electric-right-brace)
     (define-key map (kbd "<C-return>") #'M2-send-to-program)
     (define-key map (kbd "<f11>") #'M2-send-to-program)
     (define-key map (kbd "C-c C-j") #'M2-send-line-to-program)
@@ -696,10 +699,18 @@ time we send new input to the M2 process."
   'M2-newline-and-indent #'newline "1.23")
 
 (defun M2-electric-right-brace ()
-  "Insert a right brace and start a new line."
-     (interactive)
-     (self-insert-command 1)
-     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
+  "Insert a right brace and possibly re-indent.
+If `electric-indent-mode' is enabled and we are at the front of the current
+line, then re-indent."
+  (interactive)
+  (self-insert-command 1)
+  (when electric-indent-mode
+    (save-excursion
+      (backward-char)
+      (when (M2-in-front)
+	(beginning-of-line)
+	(delete-horizontal-space)
+	(indent-to (M2-this-line-indent-amount))))))
 
 (defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `M2-electric-tab' should insert a tab."
