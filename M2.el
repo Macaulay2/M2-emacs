@@ -649,21 +649,33 @@ time we send new input to the M2 process."
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
-(defun M2-next-line-indent-amount ()
-  "Determine how much to indent the next line."
-     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
+(defun M2-line-begins-with-right-paren-p ()
+  "Return non-nil if first non-whitespace character in line is a right paren."
+  (save-excursion
+    (back-to-indentation)
+    (eql (car (syntax-after (point))) 5)))
 
 (defun M2-this-line-indent-amount ()
-     "Determine how much to indent the current line."
-     (save-excursion
-	  (beginning-of-line)
-	  (if (bobp)
-	      0
-	      (forward-line -1)
-	      ;; if the previous line is blank, then keep going
-	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
-		(forward-line -1))
-	      (M2-next-line-indent-amount))))
+  "Determine how much to indent the current line."
+  (save-excursion
+    (beginning-of-line)
+    (if (bobp) 0 ;; beginning of buffer
+      (+
+       ;; determine how much to change the indentation from the previous line
+       (* M2-indent-level
+	  (+
+	   ;; if current line begins w/ right paren, then decrease
+	   (if (M2-line-begins-with-right-paren-p) -1 0)
+	   ;; get paren change from previous line
+	   (prog2
+	       (forward-line -1)
+	       (M2-paren-change))
+	   ;; if previous line begins w/ right paren, then adjust
+	   (if (M2-line-begins-with-right-paren-p) 1 0)))
+       ;; if the previous line is blank, then use global paren depth
+       (if (M2-blank-line)
+	   (* M2-indent-level (car (syntax-ppss)))
+	 (current-indentation))))))
 
 (defun M2-in-front ()
   "Determine whether we are at the front of the line."
