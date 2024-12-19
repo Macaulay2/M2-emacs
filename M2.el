@@ -555,20 +555,28 @@ time we send new input to the M2 process."
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
-(defun M2-next-line-indent-amount ()
-     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
+(defun M2-line-begins-with-right-paren-p ()
+  "Return non-nil if first non-whitespace character in line is a right paren."
+  (save-excursion
+    (back-to-indentation)
+    (eql (car (syntax-after (point))) 5)))
 
 (defun M2-this-line-indent-amount ()
-     "Determine how much to indent the current line."
-     (save-excursion
-	  (beginning-of-line)
-	  (if (bobp)
-	      0
-	      (forward-line -1)
-	      ;; if the previous line is blank, then keep going
-	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
-		(forward-line -1))
-	      (M2-next-line-indent-amount))))
+  "Determine how much to indent the current line."
+  (save-excursion
+    (beginning-of-line)
+    (if (bobp) 0
+      ;; if current line begins w/ right paren, then decrease indentation
+      (let ((paren-change (if (M2-line-begins-with-right-paren-p) -1 0)))
+	(forward-line -1)
+	;; if the previous line is blank, then keep going
+	(while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
+	  (forward-line -1))
+	(setq paren-change (+ paren-change (M2-paren-change)))
+	;; if previous line begins w/ right paren, then increase indentation
+	(when (M2-line-begins-with-right-paren-p)
+	  (setq paren-change (1+ paren-change)))
+	(+ (current-indentation) (* paren-change M2-indent-level))))))
 
 (defun M2-in-front ()
      (save-excursion (skip-chars-backward " \t") (bolp)))
