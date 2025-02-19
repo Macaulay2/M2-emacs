@@ -1,3 +1,5 @@
+;; @M2BANNER@
+
 ;; use this function with C-h f to discover which instance and version of this file is loaded
 (defun M2-version () "@M2VERSION@" "The corresponding Macaulay2 version number for the loaded Macaulay2 major mode.")
 
