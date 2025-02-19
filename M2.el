@@ -484,6 +484,8 @@ Set it with `M2-set-demo-buffer'." )
   (interactive)
   (switch-to-buffer M2-demo-buffer))
 
+(declare-function toggle-scroll-bar "scroll-bar")
+
 (defun M2-demo()
   "Sets up a new frame with a big font for a Macaulay2 demo."
   (interactive)
