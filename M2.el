@@ -86,6 +86,7 @@
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-input-filter-functions #'M2-comint-forget-errors nil t)
   (add-hook 'comint-preoutput-filter-functions 'M2-info-help nil t)
+  (add-hook 'comint-output-filter-functions #'M2-comint-fix-unclosed nil t)
   (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
   (setq-local compilation-transform-file-match-alist
 	      M2-transform-file-match-alist)
@@ -536,6 +537,23 @@ Otherwise, send the input to Macaulay2."
 	    (info-other-window (match-string 1 string))))
 	(substring string end))
     string))
+
+(defun M2-comint-insert-invisible-at-bol (string)
+  "Insert STRING with the invisible property at the beginning of the line."
+  (save-excursion
+    (beginning-of-line)
+    (insert string)
+    (put-text-property (- (point) (length string)) (point) 'invisible t)))
+
+(defun M2-comint-fix-unclosed (string)
+  "Close any unclosed strings or comments from the output.
+STRING is ignored, but we need it so this function can be added to
+`comint-output-filter-functions'."
+  (ignore string)
+  (let ((syntax (syntax-ppss (point))))
+    (cond
+     ((nth 3 syntax) (M2-comint-insert-invisible-at-bol "\""))
+     ((nth 4 syntax) (M2-comint-insert-invisible-at-bol "*-")))))
 
 (declare-function compilation-forget-errors "compile")
 
