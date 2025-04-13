@@ -113,7 +113,9 @@
 ;; key bindings
 
 (define-key M2-mode-map "\177" 'backward-delete-char-untabify)
-;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
+(define-key M2-mode-map ")" 'M2-electric-right-brace)
+(define-key M2-mode-map "]" 'M2-electric-right-brace)
+(define-key M2-mode-map "}" 'M2-electric-right-brace)
 (define-key M2-mode-map ";" 'M2-electric-semi)
 ;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
 (define-key M2-mode-map (kbd "<C-return>") 'M2-send-to-program)
@@ -186,7 +188,6 @@
      ["Highlight evaluated region"    M2-toggle-blink-region-flag
       :style toggle :selected M2-blink-region-flag]
      ["Electric semicolon"            M2-electric-semi]
-     ["Electric right brace"          M2-electric-right-brace]
      ["Electric tab"                  M2-electric-tab]
      "-")
    M2-common-menu))
@@ -573,16 +574,11 @@ time we send new input to the M2 process."
 (if (not (boundp 'font-lock-constant-face))
     (setq font-lock-constant-face font-lock-function-name-face))
 
-(defun M2-parse-line ()
-     (save-excursion
-       (let (eol)
-	 (end-of-line)
-	 (setq eol (point))
-	 (beginning-of-line)
-	 (parse-partial-sexp (point) eol))))
-
 (defun M2-paren-change ()
-     (car (M2-parse-line)))
+  "Return change in paren depth on current line."
+  (save-excursion
+    (car (parse-partial-sexp (prog2 (beginning-of-line) (point))
+			     (prog2 (end-of-line) (point))))))
 
 (defun M2-electric-semi ()
      (interactive)
@@ -590,20 +586,16 @@ time we send new input to the M2 process."
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
-(defun M2-next-line-indent-amount ()
-     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
+(defun M2-line-begins-with-right-paren-p ()
+  "Return non-nil if first non-whitespace character in line is a right paren."
+  (save-excursion
+    (back-to-indentation)
+    (eql (car (syntax-after (point))) 5)))
 
 (defun M2-this-line-indent-amount ()
-     "Determine how much to indent the current line."
-     (save-excursion
-	  (beginning-of-line)
-	  (if (bobp)
-	      0
-	      (forward-line -1)
-	      ;; if the previous line is blank, then keep going
-	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
-		(forward-line -1))
-	      (M2-next-line-indent-amount))))
+  "Determine how much to indent the current line."
+  (* M2-indent-level (+ (car (syntax-ppss))
+			(if (M2-line-begins-with-right-paren-p) -1 0))))
 
 (defun M2-in-front ()
      (save-excursion (skip-chars-backward " \t") (bolp)))
@@ -620,10 +612,22 @@ time we send new input to the M2 process."
 (define-obsolete-function-alias
   'M2-newline-and-indent 'newline "1.23")
 
-(defun M2-electric-right-brace()
-     (interactive)
-     (self-insert-command 1)
-     (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
+(defun M2-indent-line ()
+  "Indent the current line based on the paren depth."
+  (beginning-of-line)
+  (delete-horizontal-space)
+  (indent-to (M2-this-line-indent-amount)))
+
+(defun M2-electric-right-brace ()
+  "Insert a right brace and possibly re-indent.
+If `electric-indent-mode' is enabled and we are at the front of the current
+line, then re-indent."
+  (interactive)
+  (self-insert-command 1)
+  (when electric-indent-mode
+    (save-excursion
+      (backward-char)
+      (when (M2-in-front) (M2-indent-line)))))
 
 (defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `M2-electric-tab' should insert a tab."
@@ -632,17 +636,16 @@ time we send new input to the M2 process."
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
-If called by command in `M2-insert-tab-commands', and if the point is either
-to right of non-whitespace characters in the same line or if the line
+If called by command in `M2-insert-tab-commands', and if the line
 is blank, then insert `M2-indent-level' spaces.  Otherwise, indent the
 line based on the depth of the parentheses in the code."
   (interactive)
-  (indent-to
-   (prog1 (if (and (memq this-command M2-insert-tab-commands)
-		   (or (not (M2-in-front)) (M2-blank-line)))
-	      (+ (current-column) M2-indent-level)
-	    (M2-this-line-indent-amount))
-     (delete-horizontal-space))))
+  (if (and (M2-blank-line) (memq this-command M2-insert-tab-commands))
+      (indent-to (prog1 (+ (current-column) M2-indent-level)
+		   (delete-horizontal-space)))
+    (if (<= (current-column) (current-indentation))
+	(M2-indent-line)
+      (save-excursion (M2-indent-line)))))
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
