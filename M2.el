@@ -547,13 +547,14 @@ Otherwise, send the input to Macaulay2."
 
 (defun M2-comint-fix-unclosed (string)
   "Close any unclosed strings or comments from the output.
-STRING is ignored, but we need it so this function can be added to
-`comint-output-filter-functions'."
+STRING is the current Macaulay2 output, which we check to see whether we're at
+a new input prompt."
   (ignore string)
-  (let ((syntax (syntax-ppss (point))))
-    (cond
-     ((nth 3 syntax) (M2-comint-insert-invisible-at-bol "\""))
-     ((nth 4 syntax) (M2-comint-insert-invisible-at-bol "*-")))))
+  (when (string-match-p "^[ \t]*i+[1-9][0-9]* : " string)
+    (let ((syntax (syntax-ppss (point))))
+      (cond
+       ((nth 3 syntax) (M2-comint-insert-invisible-at-bol "\""))
+       ((nth 4 syntax) (M2-comint-insert-invisible-at-bol "*-"))))))
 
 (declare-function compilation-forget-errors "compile")
 
