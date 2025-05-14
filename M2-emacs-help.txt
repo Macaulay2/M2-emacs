@@ -1,137 +1,121 @@
--- Auto-generated for Macaulay2-1.24.11. Do not modify this file manually. --
+-- Auto-generated for Macaulay2-1.25.05. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
-running Macaulay2 in emacs
+running Macaulay2 in Emacs
 **************************
 
 Because some answers can be very wide, it is a good idea to run Macaulay2 in a
 window that does not wrap output lines and allows the user to scroll
-horizontally to see the rest of the output.  We provide a package for "emacs"
+horizontally to see the rest of the output.  We provide a package for "Emacs"
 that implements this. It also provides for dynamic completion of symbols in the
 language.
 
-
 There is an ASCII version of this section of the documentation distributed in
 the file share/emacs/site-lisp/macaulay2/M2-emacs-help.txt. It might be useful
-for you to visit that file with emacs now, thereby avoiding having to cut and
-paste bits of text into emacs buffers for the demonstrations below.
+for you to visit that file with Emacs now, thereby avoiding having to cut and
+paste bits of text into Emacs buffers for the demonstrations below.
 
-
-If you are a newcomer to emacs, start up emacs with the command emacs and then
-start up the emacs tutorial with the keystrokes C-h t.  (The notation C-h
-indicates that you should type Control-H, by holding down the control key, and
-pressing H.)  The emacs tutorial will introduce you to the basic keystrokes
-useful with emacs.  After running through that you will want to examine the
-online emacs manual that can be read with info mode; you may enter or re-enter
-that mode with the keystrokes C-h i. You may also want to purchase (or print
-out) the emacs manual.  It is cheap, comprehensive and informative.  Once you
-have spent an hour with the emacs tutorial and manual, come back and continue
+If you are a newcomer to Emacs, start up Emacs with the command emacs and then
+start up the Emacs tutorial with the keystrokes "C-h t".  (The notation "C-h"
+indicates that you should type "Ctrl-H", by holding down the "Ctrl" key, and
+pressing "H".)  The Emacs tutorial will introduce you to the basic keystrokes
+useful with Emacs.  After running through that you will want to examine the
+online Emacs manual that can be read with info mode; you may enter or re-enter
+that mode with the keystrokes "C-h i". You may also want to purchase (or print
+out) the Emacs manual.  It is cheap, comprehensive and informative.  Once you
+have spent an hour with the Emacs tutorial and manual, come back and continue
 from this point.
 
-
-We assume you have taught emacs how to find Macaulay2's files, as described in
-the previous sections, and that emacs is loading the file M2-init.el
-successfully.  Loading that file will cause emacs to enter a special mode for
+We assume you have taught Emacs how to find Macaulay2's files, as described in
+the previous sections, and that Emacs is loading the file M2-init.el
+successfully.  Loading that file will cause Emacs to enter a special mode for
 editing Macaulay2 code whenever a file whose name has the form *.m2 is
 encountered.  It will also provide a special mode for running Macaulay2 in an
-emacs buffer.  It sets the variable transient-mark-mode to have a different
+Emacs buffer.  It sets the variable transient-mark-mode to have a different
 value in each buffer, and sets hooks so that transient-mark-mode will be set to
-t in M2 buffers.  The effect of this is that the mark is only active
-occasionally, and then emacs functions that act on a region of text will refuse
+t in M2 buffers. The effect of this is that the mark is only active
+occasionally, and then Emacs functions that act on a region of text will refuse
 to proceed unless the mark is active.  The set-mark function or the
 exchange-point-and-mark function will activate the mark, and it will remain
 active until some change occurs to the buffer.  The only reason we recommend
 the use of this mode is so the same key can be used to evaluate a line or a
 region of code, depending on whether the region is active.
 
-
-Exit and restart emacs with your new initialization file. If you are reading
-this file with emacs, then use the keystrokes C-x 2 to divide the buffer
-containing this file into two windows. Then press the M-x M2 to start up
+Exit and restart Emacs with your new initialization file. If you are reading
+this file with Emacs, then use the keystrokes "C-x 2" to divide the buffer
+containing this file into two windows. Then press the "M-x M2" to start up
 Macaulay2 in a buffer named *M2*.  (The command line used to start Macaulay2
 may be edited before being run if you use a prefix argument with the above
-command: press C-u just before.)
-
+command: press "C-u" just before.)
 
 If this doesn't start up Macaulay2, one reason may be that your function keys
-are not operable.  In that case press M-x M2 instead.  (The notation M-x is
-emacs notation for pressing the x key while holding down the Meta or Alt key.)
-If that doesn't work, please see "teaching emacs how to find M2-init.el" and
-"teaching emacs how to find M2".
+are not operable.  In that case press "M-x M2" instead.  (The notation "M-x" is
+Emacs notation for pressing the "x" key while holding down the "Meta" or "Alt"
+key.)  If that doesn't work, please see "teaching Emacs how to find M2-init.el"
+and "teaching Emacs how to find M2".
 
-
-You may wish to bind the emacs function M2-send-to-program to a global
+You may wish to bind the Emacs function M2-send-to-program to a global
 keystroke for ease of use; this is done automatically in Macaulay2 buffers.
-For example, the following emacs code will bind it to the function key f11.
-
+For example, the following Emacs code will bind it to the function key "F11".
 
 (global-set-key [ f11 ] 'M2-send-to-program)
 
-
-You may use C-x o freely to switch from one window to the other. Verify that
-Macaulay2 is running by entering a command such as 2+2. Now paste the following
-text into a buffer, unless you have the ASCII version of this documentation in
-an emacs buffer already, position the cursor on the first line of code, and
-press the f11 function key repeatedly to present each line to Macaulay2.
-
+You may use "C-x o" freely to switch from one window to the other. Verify that
+Macaulay2 is running by entering a command such as "2+2". Now paste the
+following text into a buffer, unless you have the ASCII version of this
+documentation in an Emacs buffer already, position the cursor on the first line
+of code, and press the "F11" function key repeatedly to present each line to
+Macaulay2.
 
 i1 : R = ZZ/101[x,y,z]
-     i2 : f = symmetricPower(2,vars R)
-     i3 : M = cokernel f
-     i4 : C = resolution M
-     i5 : betti C
-
+i2 : f = symmetricPower(2,vars R)
+i3 : M = cokernel f
+i4 : C = resolution M
+i5 : betti C
 
 Notice that the input prompts are not submitted to Macaulay2.
-
 
 Here is a way to conduct a demo of Macaulay2 in which the code to be submitted
 is not visible on the screen.  Visit a file called foo.m2 and paste the
 following text into it.
 
-
 20!
-     4 + 5 * 2^20
-     -- that's all folks!
+4 + 5 * 2^20
+-- that's all folks!
 
+Press "M-f11" with your cursor in this buffer to designate it as the source for
+the Macaulay2 commands.  (The notation "M-f11" means that while holding the
+"Meta" key down, you should press the "F11" function key.  The "Meta" key is
+the "Alt" key on some keyboards, or it can be simulated by pressing Escape
+(just once) and following that with the key you wanted to press while the meta
+key was held down.)  Then position your cursor (and thus the Emacs point)
+within the line containing 20!.  Now press "M-x M2-demo" to open up a new frame
+called DEMO for the *M2* window with a large font suitable for use with a
+projector, and with your cursor in that frame, press "F11" a few times to
+conduct the demo.  (If the font or frame is the wrong size, you may have to
+create a copy of the file M2.el with a version of the function M2-demo modified
+to fit your screen.)
 
-Press M-f11 with your cursor in this buffer to designate it as the source for
-the Macaulay2 commands.  (The notation M-f11 means that while holding the Meta
-key down, you should press the f11 function key.  The Meta key is the Alt key
-on some keyboards, or it can be simulated by pressing Escape (just once) and
-following that with the key you wanted to press while the meta key was held
-down.)  Then position your cursor (and thus the emacs point) within the line
-containing 20!.  Now press M-x M2-demo to open up a new frame called DEMO for
-the *M2* window with a large font suitable for use with a projector, and with
-your cursor in that frame, press f11 a few times to conduct the demo.  (If the
-font or frame is the wrong size, you may have to create a copy of the file
-M2.el with a version of the function M2-demo modified to fit your screen.)
-
-
-One press of f11 brings the next line of code forward into the *M2* buffer, and
-the next press executes it.  Use C-x 5 0 when you want the demo frame to go
-away.
-
+One press of "F11" brings the next line of code forward into the *M2* buffer,
+and the next press executes it.  Use "C-x 5 0" when you want the demo frame to
+go away.
 
 There is a way to send a region of text to Macaulay2: simply select a region of
-text, making sure the mark is active (as described above) and press f11. Try
-that on the list below; put it into an emacs buffer, move your cursor to the
-start of the list, press M-C-@ or M-C-space to mark the list, and then press
-f11 to send it to Macaulay2.  (The notation M-C-@ means: while holding down the
-Meta key and the Control key press the @ key, for which you'll also need the
-shift key.)
-
+text, making sure the mark is active (as described above) and press "F11". Try
+that on the list below; put it into an Emacs buffer, move your cursor to the
+start of the list, press "M-C-@" or "M-C-space" to mark the list, and then
+press "F11" to send it to Macaulay2. (The notation "M-C-@" means: while holding
+down the "Meta" key and the "Ctrl" key press the "@" key, for which you'll also
+need the shift key.)
 
 {a,b,c,d,e,f,
      g,h,i,j,k,l,
      m,n}
 
-
-We have developed a system for incorporating Macaulay2 interactions into TeX
-files.  Here is an example of how that looks.  Paste the following text into an
-emacs buffer.
-
+We have developed a system for incorporating Macaulay2 interactions into $\TeX$
+files. Here is an example of how that looks. Paste the following text into an
+Emacs buffer.
 
 The answer, 4, is displayed after the output label ``{\tt o1\ =}''.
      Multiplication is indicated with the traditional {\tt *}.
@@ -139,28 +123,32 @@ The answer, 4, is displayed after the output label ``{\tt o1\ =}''.
      Powers are obtained as follows.
      <<<2^100>>>
 
-
 The bits in brackets can be submitted to Macaulay2 easily.  Position your
-cursor at the top of the buffer and press F10.  The cursor will move just past
-the first <<<, and the emacs mark will be positioned just before the >>>.  Thus
-1*2*3*4 is the region, and it will even be highlighted if you have set the
-emacs variable transient-mark-mode to t for this buffer.  Pressing f11 will
-send 1*2*3*4 to Macaulay2 for execution: try it now.  A sequence of such
-Macaulay2 commands can be executed by alternately pressing F10 and f11.  You
-may also use M-F10 to move backward to the previous bracketed expression.
+cursor at the top of the buffer and press "F10".  The cursor will move just
+past the first <<<, and the Emacs mark will be positioned just before the >>>.
+Thus 1*2*3*4 is the region, and it will even be highlighted if you have set the
+Emacs variable transient-mark-mode to t for this buffer.  Pressing "F11" will
+send 1*2*3*4 to Macaulay2 for execution: try it now. A sequence of such
+Macaulay2 commands can be executed by alternately pressing "F10" and "F11". You
+may also use "M-f10" to move backward to the previous bracketed expression.
 
-
-Now go to the very end of the *M2* buffer with M-> and experiment with keyword
-completion.  Type reso and then press the TAB key.  Notice how the word is
-completed to resolution for you.  Delete the word with M-DEL, type res and then
-press the TAB key.  The possible completions are displayed in a window.  Switch
-to it with the F8 key, move to the desired completion, select it with the
-RETURN key, and then return to the *M2* buffer with C-x o.  Alternatively, if
-you have a mouse, use the middle button to select the desired completion.
-
+Now go to the very end of the *M2* buffer with "M->" and experiment with
+keyword completion. Type reso and then press the "TAB" key.  Notice how the
+word is completed to resolution for you.  Delete the word with "M-DEL", type
+res and then press the "TAB" key. The possible completions are displayed in a
+window.  Switch to it with the "F8" key, move to the desired completion, press
+the "Enter" key, and then return to the *M2* buffer with "C-x o".
+Alternatively, if you have a mouse, use the middle button to select the desired
+completion.
 
 Experiment with command line history in the *M2* buffer.  Position your cursor
-at the end of the buffer, and then use M-p and M-n to move to the previous and
-next line of input remembered in the history.  When you get to one you'd like
-to run again, simply press return to do so.  Or edit it slightly to change it
-before pressing return.
+at the end of the buffer, and then use "M-p" and "M-n" to move to the previous
+and next line of input remembered in the history.  When you get to one you'd
+like to run again, simply press return to do so.  Or edit it slightly to change
+it before pressing return.
+
+
+
+-------------------------------------------------------------------------------
+
+The source of this document is in Macaulay2Doc/ov_editors_emacs.m2:459:0.
