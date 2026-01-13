@@ -6,9 +6,11 @@
 
 ;;; Commentary:
 ;; This file used to contain most of M2-mode definitions, which have since moved
-;; to M2.el. This file remains for compatibility, or for new features.
+;; to M2.el.  This file remains for compatibility, or for new features.
 
 (require 'M2)
+
+;;; Code:
 
 (provide 'M2-mode)
 
