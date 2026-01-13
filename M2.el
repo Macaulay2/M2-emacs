@@ -45,6 +45,9 @@
 ;; M2-comint-mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defconst M2-comint-prompt-regexp "^\\([ \t]*\\(i*[1-9][0-9]* :\\|o*[1-9][0-9]* =\\) \\)?"
+  "Regular expression for the Macaulay2 prompt")
+
 (defvar M2-error-regexp-alist
   '(
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
