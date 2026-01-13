@@ -27,9 +27,6 @@
 (defconst M2-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
   "Regular expression for Macaulay2 constants")
 
-(defconst M2-comint-prompt-regexp "^\\([ \t]*\\(i*[1-9][0-9]* :\\|o*[1-9][0-9]* =\\) \\)?"
-  "Regular expression for the Macaulay2 prompt")
-
 (defconst M2-mode-font-lock-keywords
   (list
    (cons M2-keyword-regexp  'font-lock-keyword-face)
