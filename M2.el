@@ -348,7 +348,7 @@ current window added to it."
   (let* ((bounds (bounds-of-thing-at-point 'symbol))
          (start (car bounds))
          (end (cdr bounds)))
-    (list start end M2-symbols :exclusive 'no)))
+    (list start end M2-symbols-completion-table :exclusive 'no)))
 
 (defun M2-to-end-of-prompt()
      "Move to end of prompt matching M2-comint-prompt-regexp on this line."
