@@ -18,32 +18,14 @@
   '( @M2SYMBOLS@ )
   "A list of the symbols available in Macaulay2, for use with dynamic completion." )
 
-(defconst M2-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
+(defconst M2-symbols-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
   "Regular expression for Macaulay2 keywords")
-(defconst M2-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
+(defconst M2-symbols-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
   "Regular expression for Macaulay2 types")
-(defconst M2-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
+(defconst M2-symbols-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
   "Regular expression for Macaulay2 functions")
-(defconst M2-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
+(defconst M2-symbols-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
   "Regular expression for Macaulay2 constants")
-
-(defconst M2-mode-font-lock-keywords
-  (list
-   (cons M2-keyword-regexp  'font-lock-keyword-face)
-   (cons M2-type-regexp     'font-lock-type-face)
-   (cons M2-function-regexp 'font-lock-function-name-face)
-   (cons M2-constant-regexp 'font-lock-constant-face)))
-
-; TODO:
-; font-lock-warning-face
-; font-lock-variable-name-face
-; font-lock-builtin-face
-; font-lock-preprocessor-face
-; font-lock-doc-face
-; font-lock-negation-char-face
-
-(if (fboundp 'font-lock-add-keywords)
-    (font-lock-add-keywords 'M2-mode M2-mode-font-lock-keywords 'set))
 
 (provide 'M2-symbols)
 
