@@ -20,7 +20,7 @@
 (require 'thingatpt)
 (require 'M2-symbols)
 
-(defgroup Macaulay2 nil
+(defgroup M2 nil
   "Support for Macaulay2 language development."
   :group 'languages
   :prefix "M2-")
