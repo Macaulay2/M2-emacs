@@ -11,6 +11,8 @@
 ;;
 ;; @M2BANNER@
 
+;;; Code:
+
 ;; use this function with C-h f to discover which instance and version of this file is loaded
 (defun M2-version () "@M2VERSION@" "The corresponding Macaulay2 version number for the loaded Macaulay2 major mode.")
 
@@ -19,13 +21,13 @@
   "A list of the symbols available in Macaulay2, for use with dynamic completion." )
 
 (defconst M2-symbols-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
-  "Regular expression for Macaulay2 keywords")
+  "Regular expression for Macaulay2 keywords.")
 (defconst M2-symbols-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
-  "Regular expression for Macaulay2 types")
+  "Regular expression for Macaulay2 types.")
 (defconst M2-symbols-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
-  "Regular expression for Macaulay2 functions")
+  "Regular expression for Macaulay2 functions.")
 (defconst M2-symbols-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
-  "Regular expression for Macaulay2 constants")
+  "Regular expression for Macaulay2 constants.")
 
 (provide 'M2-symbols)
 
