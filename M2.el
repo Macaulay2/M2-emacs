@@ -99,6 +99,21 @@
 ;; Common definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defconst M2-mode-font-lock-keywords
+  (list
+   (cons M2-symbols-keyword-regexp  'font-lock-keyword-face)
+   (cons M2-symbols-type-regexp     'font-lock-type-face)
+   (cons M2-symbols-function-regexp 'font-lock-function-name-face)
+   (cons M2-symbols-constant-regexp 'font-lock-constant-face)))
+
+; TODO:
+; font-lock-warning-face
+; font-lock-variable-name-face
+; font-lock-builtin-face
+; font-lock-preprocessor-face
+; font-lock-doc-face
+; font-lock-negation-char-face
+
 (defun M2-common()
   "Set up features common to both Macaulay2 major modes."
   (set (make-local-variable 'comment-start) "-- ")
