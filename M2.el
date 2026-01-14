@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 ;; Macaulay2 makes no attempt to wrap long output lines, so we provide
-;; functions that make horizontal scrolling easier. In addition:
+;; functions that make horizontal scrolling easier.  In addition:
 ;;    - run Macaulay2 as a command interpreter in an Emacs buffer
 ;;    - provide a major mode used for editing Macaulay2 source files
 
@@ -31,13 +31,16 @@
 
 ;;;###autoload
 (define-derived-mode M2-mode prog-mode "Macaulay2"
-  "Major mode for editing Macaulay2 source code.\n\n\\{M2-mode-map}" (M2-common))
+  "Major mode for editing Macaulay2 source code.
+
+\\\{M2-mode-map}."
+  (M2-common))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
 
 (defcustom M2-indent-level 4
-  "Indentation increment in Macaulay2 mode"
+  "Indentation increment in Macaulay2 mode."
   :type 'integer
   :group 'Macaulay2)
 
@@ -46,7 +49,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst M2-comint-prompt-regexp "^\\([ \t]*\\(i*[1-9][0-9]* :\\|o*[1-9][0-9]* =\\) \\)?"
-  "Regular expression for the Macaulay2 prompt")
+  "Regular expression for the Macaulay2 prompt.")
 
 (defvar M2-error-regexp-alist
   '(
@@ -84,7 +87,9 @@
 
 ;;;###autoload
 (define-derived-mode M2-comint-mode comint-mode "Macaulay2 Interaction"
-  "Major mode for interacting with a Macaulay2 process.\n\n\\{M2-comint-mode-map}"
+  "Major mode for interacting with a Macaulay2 process.
+
+\\{M2-comint-mode-map}"
   (M2-common)
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-input-filter-functions #'M2-comint-forget-errors nil t)
@@ -188,7 +193,7 @@
       "Common parts of menus for both `M2-mode' and `M2-comint-mode'.")
 
 (easy-menu-define M2-menu M2-mode-map
-  "Menu for Macaulay2 major mode"
+  "Menu for Macaulay2 major mode."
   (append
    '("Macaulay2"
      ["Start Macaulay2"               M2]
@@ -210,7 +215,7 @@
    M2-common-menu))
 
 (easy-menu-define M2-comint-menu M2-comint-mode-map
-  "Menu for Macaulay2 Interaction major mode"
+  "Menu for Macaulay2 Interaction major mode."
   (append
    '("Macaulay2 Interaction"
      ["Send to Macaulay2"   comint-send-input]
@@ -266,20 +271,22 @@
 (defvar M2-history (list M2-command) "The history of recent Macaulay2 command lines.")
 (defvar M2-send-to-buffer-history '("*M2*") "The history of recent Macaulay2 send-to buffers.")
 (defvar M2-tag-history () "The history of recent Macaulay2 command name tags.")
-(defvar M2-usual-jog 30 "Usual distance scrolled by M2-jog-left and M2-jog-right")
+(defvar M2-usual-jog 30 "Usual distance scrolled by `M2-jog-left' and `M2-jog-right'.")
 
 (defun M2-add-width-option (command)
+  "Set the print width specified in COMMAND to match the window width."
   (concat (replace-regexp-in-string " +--print-width +[0-9]+\\| +$" "" command)
 	  " --print-width " (number-to-string (- (window-body-width) 1)) " "))
 
 ;;;###autoload
 (defun M2 (command name)
-  "Run Macaulay2 in a buffer.  With a prefix argument, the command line given
-to the shell to run Macaulay2 can be edited in the minibuffer.  With prefix
-argument \\[universal-argument] \\[universal-argument] the tag from which the buffer name is constructed (by
-prepending and appending asterisks) can be entered in the minibuffer.  The
-command line will always have the appropriate option for the width of the
-current window added to it."
+  "Run Macaulay2 in a buffer.
+With a prefix argument \\[universal-argument], set COMMAND, the command line
+given to the shell to run Macaulay2 can be edited in the minibuffer.  With
+prefix argument \\[universal-argument] \\[universal-argument], set NAME, the
+tag from which the buffer name is constructed (by prepending and appending
+asterisks) can be entered in the minibuffer.  The command line will always have
+the appropriate option for the width of the current window added to it."
   (interactive
    (list
     (cond
@@ -302,12 +309,19 @@ current window added to it."
 	(text-scale-set n)))
     buffer))
 
-(defun M2-left-hand-column () (window-hscroll))
-(defun M2-right-hand-column () (+ (window-hscroll) (window-body-width) -1))
-(defun M2-on-screen () (and (< (M2-left-hand-column) (current-column)) (< (current-column) (M2-right-hand-column))))
+(defun M2-left-hand-column ()
+  "Return the column at the left hand side of the window."
+  (window-hscroll))
+(defun M2-right-hand-column ()
+  "Return the column at the right hand side of the window."
+  (+ (window-hscroll) (window-body-width) -1))
+(defun M2-on-screen ()
+  "Return whether the current column is visible in the window."
+  (and (< (M2-left-hand-column) (current-column))
+       (< (current-column) (M2-right-hand-column))))
 (defun M2-position-point (pos)
-  "Scroll display horizontally so point ends up at center of screen, or
-  at column position given by prefix argument."
+  "Scroll display horizontally.
+Point ends up at center of screen or at column position given by POS."
   (interactive "P")
   (if (listp pos) (setq pos (car pos)))
   (if (not pos)
@@ -316,8 +330,8 @@ current window added to it."
   (set-window-hscroll (selected-window) (+ 1 (- (current-column) pos))))
 
 (defun M2-jog-right (arg)
-  "Move point right and scroll display so it remains visible.  Optional
-  prefix argument tells how far to move."
+  "Move point right and scroll display so it remains visible.
+Optional prefix argument ARG tells how far to move."
   (interactive "P")
   (if (listp arg) (setq arg (car arg)))
   (goto-char
@@ -327,8 +341,8 @@ current window added to it."
   (if (not (M2-on-screen)) (M2-position-point -2)))
 
 (defun M2-jog-left (arg)
-  "Move point left and scroll display so it remains visible.  Optional
-  prefix argument tells how far to move."
+  "Move point left and scroll display so it remains visible.
+Optional prefix argument ARG tells how far to move."
   (interactive "P")
   (if (listp arg) (setq arg (car arg)))
   (goto-char
@@ -338,8 +352,9 @@ current window added to it."
   (if (not (M2-on-screen)) (M2-position-point 1)))
 
 (defun M2-toggle-truncate-lines ()
-  "Toggle the value of truncate-lines, the variable which determines whether
-  long lines are truncated or wrapped on the screen."
+  "Toggle the value of `truncate-lines'.
+This is the variable which determines whether long lines are truncated or
+wrapped on the screen."
   (interactive)
   (setq truncate-lines (not truncate-lines))
   (if truncate-lines
@@ -351,18 +366,18 @@ current window added to it."
   (M2-update-screen))
 
 (defun M2-update-screen ()
+  "Redisplay the selected window."
     (set-window-start (selected-window) (window-start (selected-window))))
 
 (defun M2-completion-at-point ()
-  "Function used for `completion-at-point-functions' in `M2-mode' and
-`M2-comint-mode'."
+  "Function used for `completion-at-point-functions' for the M2 major modes."
   (let* ((bounds (bounds-of-thing-at-point 'symbol))
          (start (car bounds))
          (end (cdr bounds)))
     (list start end M2-symbols-completion-table :exclusive 'no)))
 
 (defun M2-to-end-of-prompt()
-     "Move to end of prompt matching M2-comint-prompt-regexp on this line."
+     "Move to end of prompt matching `M2-comint-prompt-regexp' on this line."
      (interactive)
      (beginning-of-line)
      (let ((case-fold-search nil))
@@ -371,8 +386,8 @@ current window added to it."
 	 (back-to-indentation))))
 
 (defun M2-match-next-bracketed-input()
-  "Move forward to the next region bracketed by <<< and >>>, marking
-it with the point and the mark.  After marking the region, the code
+  "Move forward to the next region bracketed by <<< and >>>.
+Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[M2-send-to-program]."
   (interactive)
   (goto-char
@@ -382,8 +397,8 @@ can be executed with \\[M2-send-to-program]."
      (set-mark (match-beginning 0)))))
 
 (defun M2-match-previous-bracketed-input()
-  "Move backward to the previous region bracketed by <<< and >>>, marking
-it with the point and the mark.  After marking the region, the code
+  "Move backward to the previous region bracketed by <<< and >>>.
+Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[M2-send-to-program]."
   (interactive)
   (goto-char
@@ -414,7 +429,7 @@ Sends code between START and END to Macaulay2 inferior process in
 SEND-TO-BUFFER."
   (unless (and (get-buffer send-to-buffer) (get-buffer-process send-to-buffer))
     (user-error
-     "Start a Macaulay2 process first with `M-x M2' or `%s'."
+     "Start a Macaulay2 process first with `M-x M2' or `%s'.?"
      (key-description (where-is-internal #'M2 overriding-local-map t))))
   (display-buffer send-to-buffer '(nil (inhibit-same-window . t)))
   (let ((cmd (buffer-substring start end)))
@@ -426,12 +441,14 @@ SEND-TO-BUFFER."
       (set-window-point (get-buffer-window send-to-buffer 'visible) (point)))))
 
 (defun M2-send-region-to-program (send-to-buffer)
-  "Send the current region to Macaulay2.  See `M2-send-to-program' for more."
+  "Send the current region to the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer (region-beginning) (region-end)))
 
 (defun M2-send-line-to-program (send-to-buffer)
-  "Send the current line to Macaulay2.  See `M2-send-to-program' for more."
+  "Send the current line to the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer
 			      (save-excursion (M2-to-end-of-prompt) (point))
@@ -441,7 +458,8 @@ SEND-TO-BUFFER."
   (when (and (eobp) (not (bolp))) (newline)))
 
 (defun M2-send-to-program (send-to-buffer)
-     "Send the current line except for a possible prompt, or the region, if the
+  "Send the current line or region to the M2 process in SEND-TO-BUFFER.
+Send the current line except for a possible prompt, or the region, if the
 mark is active, to Macaulay2 in its buffer, making its window visible.
 Afterwards, in the case where the mark is not active, move the cursor to
 the next line.  With a prefix argument, the name of the buffer to
@@ -453,25 +471,26 @@ sent can be entered, with history."
        (M2-send-line-to-program send-to-buffer)))
 
 (defun M2-send-buffer-to-program (send-to-buffer)
-  "Send the entire buffer to Macaulay2.  See `M2-send-to-program' for more."
+  "Send the entire buffer to the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer (point-min) (point-max)))
 
 (defun M2-send-buffer-from-beg-to-here-to-program (send-to-buffer)
-  "Send everything from the beginning of the buffer to the point to
-Macaulay2.  See `M2-send-to-program' for more."
+  "Send everything before the the point the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer (point-min) (point)))
 
 (defun M2-send-buffer-from-here-to-end-to-program (send-to-buffer)
-  "Send everything from the point to the end of the buffer to
-Macaulay2.  See `M2-send-to-program' for more."
+  "Send everything after the the point the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (M2--send-to-program-helper send-to-buffer (point) (point-max)))
 
 (defun M2-send-paragraph-to-program (send-to-buffer)
-  "Send the current paragraph to Macaulay2.  See `M2-send-to-program'
-for more."
+  "Send the current paragraph to the M2 process in SEND-TO-BUFFER.
+See `M2-send-to-program' for more."
   (interactive (M2--get-send-to-buffer))
   (let ((end (progn (forward-paragraph) (point)))
 	(start (progn (backward-paragraph) (point))))
@@ -486,8 +505,8 @@ for more."
 Set it with `M2-set-demo-buffer'." )
 
 (defun M2-set-demo-buffer()
-  "Set the variable M2-demo-buffer to the current buffer, so that later,
-`M2-get-input-from-demo-buffer' can obtain lines from this buffer."
+  "Set the variable `M2-demo-buffer' to the current buffer.
+Later, `M2-get-input-from-demo-buffer' can obtain lines from this buffer."
   (interactive)
   (setq M2-demo-buffer (current-buffer)))
 
@@ -499,7 +518,7 @@ Set it with `M2-set-demo-buffer'." )
 (declare-function toggle-scroll-bar "scroll-bar")
 
 (defun M2-demo()
-  "Sets up a new frame with a big font for a Macaulay2 demo."
+  "Set up a new frame with a big font for a Macaulay2 demo."
   (interactive)
   (let* ((f (prog1
 	      (select-frame
@@ -541,6 +560,9 @@ Otherwise, send the input to Macaulay2."
     (comint-send-input)))
 
 (defun M2-info-help (string)
+  "Load info documentation for Macaulay2.
+When using the infoHelp function, M2 emits a special string.  If the M2
+output given by STRING matches, then load the corresponding documentation."
   (if (string-match "-\\* infoHelp: \\(.*\\) \\*-" string)
       (let ((end (1+ (match-end 0))))
 	(save-excursion
@@ -592,12 +614,14 @@ time we send new input to the M2 process."
 			     (prog2 (end-of-line) (point))))))
 
 (defun M2-electric-semi ()
+  "Insert a semicolon and start a new line."
      (interactive)
      (insert ?\;)
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
 (defun M2-next-line-indent-amount ()
+  "Determine how much to indent the next line."
      (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
 
 (defun M2-this-line-indent-amount ()
@@ -613,12 +637,15 @@ time we send new input to the M2 process."
 	      (M2-next-line-indent-amount))))
 
 (defun M2-in-front ()
+  "Determine whether we are at the front of the line."
      (save-excursion (skip-chars-backward " \t") (bolp)))
 
 (defun M2-blank-line ()
+  "Determine whether the line is blank."
      (save-excursion (beginning-of-line) (skip-chars-forward " \t") (eolp)))
 
 (defun M2-next-line-blank()
+  "Determine whether the next line is blank."
      (save-excursion
 	  (end-of-line)
 	  (or (eobp)
@@ -628,6 +655,7 @@ time we send new input to the M2 process."
   'M2-newline-and-indent 'newline "1.23")
 
 (defun M2-electric-right-brace()
+  "Insert a right brace and start a new line."
      (interactive)
      (self-insert-command 1)
      (and (eolp) (M2-next-line-blank) (< (M2-paren-change) 0) (newline nil t)))
@@ -654,13 +682,13 @@ line based on the depth of the parentheses in the code."
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
 (defcustom M2-blink-region-flag t
-  "If non-nil, evaluated region is highlighted for `M2-blink-delay' seconds."
+  "Non-nil means evaluated region is highlighted for `M2-blink-delay' seconds."
   :type 'boolean
   :group 'Macaulay2)
 
 (defcustom M2-blink-delay .3
-  "The number of seconds that the evaluated region is highlighted, provided
-that `M2-blink-region-flag' is non-nil"
+  "The number of seconds that the evaluated region is highlighted.
+Only if `M2-blink-region-flag' is non-nil."
   :type 'number
   :group 'Macaulay2)
 
@@ -671,8 +699,9 @@ that `M2-blink-region-flag' is non-nil"
   "The overlay for highlighting currently evaluated region or line.")
 
 (defun M2-blink-region (start end)
-  "If `M2-blink-region-flag' is non-nil, highlight the evaluated region for
-`M2-blink-delay' seconds."
+  "Highlight the evaluated region for `M2-blink-delay' seconds.
+Only if `M2-blink-region-flag` is non-nil.  The highlighted region is bounded
+by START and END."
   (when M2-blink-region-flag
     (move-overlay M2-current-region-overlay start end)
     (run-with-timer M2-blink-delay nil
