@@ -1,6 +1,8 @@
-;;; M2-init.el --- Setup M2.el for autoloading (legacy)
+;;; M2-init.el --- Setup M2.el for autoloading (legacy) -*- lexical-binding: t -*-
 ;; URL: https://github.com/Macaulay2/M2-emacs
 ;; Version: 1.25.11
+
+;; Copyright (C) 1997-2026 The Macaulay2 Authors
 
 ;;; Commentary:
 
@@ -11,6 +13,21 @@
 ;; (add-to-list 'load-path "/path/to/M2")
 ;; (load "M2-init")
 ;; This is done automatically by the Macaulay2 method "setupEmacs()".
+
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Code:
 
