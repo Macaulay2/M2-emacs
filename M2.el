@@ -731,10 +731,6 @@ by START and END."
   (interactive)
   (setq M2-blink-region-flag (not M2-blink-region-flag)))
 
-; enable syntax highlighting:
-(add-hook 'M2-comint-mode-hook #'turn-on-font-lock)
-(add-hook 'M2-mode-hook #'turn-on-font-lock)
-
 (provide 'M2)
 
 ; Local Variables:
