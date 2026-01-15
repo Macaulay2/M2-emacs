@@ -44,6 +44,60 @@
   :prefix "M2-")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; key bindings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun M2-define-common-keys (map)
+  "Define keys in MAP that are common to both `M2-mode' and `M2-comint-mode'."
+  (define-key map [ f12 ] #'M2) ; the user may want to make this one global
+  (define-key map [ (meta f12) ] #'M2-demo)
+  (define-key map [ (control f11) ] #'M2-switch-to-demo-buffer)
+  (define-key map [ (meta f11) ] #'M2-set-demo-buffer)
+  (define-key map "\^C\t" #'completion-at-point)
+  (define-key map [(meta tab)] #'completion-at-point)
+  (define-key map [ f10 ] #'M2-match-next-bracketed-input)
+  (define-key map [ (meta f10) ] #'M2-match-previous-bracketed-input))
+
+(defvar M2-mode-map
+  (let ((map (make-sparse-keymap)))
+    (M2-define-common-keys map)
+    (define-key map "\177" #'backward-delete-char-untabify)
+    ;; (define-key map "}" #'M2-electric-right-brace)
+    (define-key map ";" #'M2-electric-semi)
+    ;; (define-key map "\^Cd" #'M2-find-documentation)
+    (define-key map (kbd "<C-return>") #'M2-send-to-program)
+    (define-key map (kbd "<f11>") #'M2-send-to-program)
+    (define-key map (kbd "C-c C-j") #'M2-send-line-to-program)
+    (define-key map (kbd "C-c C-r") #'M2-send-region-to-program)
+    (define-key map (kbd "C-c C-b") #'M2-send-buffer-to-program)
+    (define-key map (kbd "C-c <C-up>") #'M2-send-buffer-from-beg-to-here-to-program)
+    (define-key map (kbd "C-c <C-down>") #'M2-send-buffer-from-here-to-end-to-program)
+    (define-key map (kbd "C-c C-p") #'M2-send-paragraph-to-program)
+    map))
+
+(defvar M2-comint-mode-map
+  (let ((map (make-sparse-keymap)))
+    (M2-define-common-keys map)
+    (define-key map "\t" #'completion-at-point)
+    (define-key map [ f2 ] #'M2-position-point)
+    (define-key map [ (control C) ?. ] #'M2-position-point)
+    (define-key map [ f3 ] #'M2-jog-left)
+    (define-key map [ (control C) < ] #'M2-jog-left)
+    (define-key map  [ f4 ] #'M2-jog-right)
+    (define-key map [ (control C) > ] #'M2-jog-right)
+    ;; (define-key map [ f5 ] #'M2-toggle-truncate-lines)
+    (define-key map [ (control C) ? ] #'M2-toggle-truncate-lines)
+    ;; (define-key map [ f6 ] #'scroll-left)
+    (define-key map [ (control C) l ] #'scroll-left)
+    ;; (define-key map [ f7 ] #'scroll-right)
+    (define-key map [ (control C) r ] #'scroll-right)
+    ;; (define-key map [ f8 ] #'switch-to-completions)
+    (define-key map [ (control C) c ] #'switch-to-completions)
+    ;; (define-key map [ (control C) d ] #'M2-find-documentation)
+    (define-key map (kbd "<f11>") #'M2-send-input-or-get-input-from-demo-buffer)
+    map))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -150,55 +204,6 @@
   (setq truncate-lines t)
   (setq case-fold-search nil)
   (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t))
-
-;; key bindings
-
-(define-key M2-mode-map "\177" 'backward-delete-char-untabify)
-;; (define-key M2-mode-map "}" 'M2-electric-right-brace)
-(define-key M2-mode-map ";" 'M2-electric-semi)
-;; (define-key M2-mode-map "\^Cd" 'M2-find-documentation)
-(define-key M2-mode-map (kbd "<C-return>") 'M2-send-to-program)
-(define-key M2-mode-map (kbd "<f11>") 'M2-send-to-program)
-(define-key M2-mode-map (kbd "C-c C-j") 'M2-send-line-to-program)
-(define-key M2-mode-map (kbd "C-c C-r") 'M2-send-region-to-program)
-(define-key M2-mode-map (kbd "C-c C-b") 'M2-send-buffer-to-program)
-(define-key M2-mode-map (kbd "C-c <C-up>")
-  'M2-send-buffer-from-beg-to-here-to-program)
-(define-key M2-mode-map (kbd "C-c <C-down>")
-  'M2-send-buffer-from-here-to-end-to-program)
-(define-key M2-mode-map (kbd "C-c C-p") 'M2-send-paragraph-to-program)
-
-(define-key M2-comint-mode-map "\t" 'completion-at-point)
-(define-key M2-comint-mode-map [ f2 ] 'M2-position-point)
-(define-key M2-comint-mode-map [ (control C) ?. ] 'M2-position-point)
-(define-key M2-comint-mode-map [ f3 ] 'M2-jog-left)
-(define-key M2-comint-mode-map [ (control C) < ] 'M2-jog-left)
-(define-key M2-comint-mode-map [ f4 ] 'M2-jog-right)
-(define-key M2-comint-mode-map [ (control C) > ] 'M2-jog-right)
-;(define-key M2-comint-mode-map [ f5 ] 'M2-toggle-truncate-lines)
-(define-key M2-comint-mode-map [ (control C) ? ] 'M2-toggle-truncate-lines)
-;(define-key M2-comint-mode-map [ f6 ] 'scroll-left)
-(define-key M2-comint-mode-map [ (control C) l ] 'scroll-left)
-;(define-key M2-comint-mode-map [ f7 ] 'scroll-right)
-(define-key M2-comint-mode-map [ (control C) r ] 'scroll-right)
-;(define-key M2-comint-mode-map [ f8 ] 'switch-to-completions)
-(define-key M2-comint-mode-map [ (control C) c ] 'switch-to-completions)
-;; (define-key M2-comint-mode-map [ (control C) d ] 'M2-find-documentation)
-(define-key M2-comint-mode-map (kbd "<f11>")
-	    #'M2-send-input-or-get-input-from-demo-buffer)
-
-(mapc
- (function
-  (lambda (mode-map)
-    (define-key mode-map [ f12 ] 'M2) ; the user may want to make this one global
-    (define-key mode-map [ (meta f12) ] 'M2-demo)
-    (define-key mode-map [ (control f11) ] 'M2-switch-to-demo-buffer)
-    (define-key mode-map [ (meta f11) ] 'M2-set-demo-buffer)
-    (define-key mode-map "\^C\t" 'completion-at-point)
-    (define-key mode-map [(meta tab)] 'completion-at-point)
-    (define-key mode-map [ f10 ] 'M2-match-next-bracketed-input)
-    (define-key mode-map [ (meta f10) ] 'M2-match-previous-bracketed-input)))
- (list M2-mode-map M2-comint-mode-map))
 
 ;; menus
 
