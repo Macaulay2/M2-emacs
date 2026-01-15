@@ -1,8 +1,10 @@
 ;;; M2-init.el --- Setup M2.el for autoloading (legacy) -*- lexical-binding: t -*-
-;; URL: https://github.com/Macaulay2/M2-emacs
-;; Version: 1.25.11
 
 ;; Copyright (C) 1997-2026 The Macaulay2 Authors
+
+;; Version: 1.25.11
+;; Keywords: languages
+;; URL: https://github.com/Macaulay2/M2-emacs
 
 ;;; Commentary:
 
