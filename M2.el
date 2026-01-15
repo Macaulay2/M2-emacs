@@ -337,20 +337,13 @@ current window added to it."
      (max (save-excursion (beginning-of-line) (point)) (- (point) M2-usual-jog))))
   (if (not (M2-on-screen)) (M2-position-point 1)))
 
-(defun M2-visible-horizontally ()
-  (save-excursion
-    (and
-     (<= 0 (- (current-column) (window-hscroll (selected-window))))
-     (< (- (current-column) (window-hscroll (selected-window)))
-	(window-body-width (selected-window))))))
-
 (defun M2-toggle-truncate-lines ()
   "Toggle the value of truncate-lines, the variable which determines whether
   long lines are truncated or wrapped on the screen."
   (interactive)
   (setq truncate-lines (not truncate-lines))
   (if truncate-lines
-      (if (not (M2-visible-horizontally))
+      (if (not (M2-on-screen))
 	  (set-window-hscroll
 	   (selected-window)
 	   (- (current-column) (/ (window-body-width) 2))))
