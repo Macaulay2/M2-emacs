@@ -137,7 +137,7 @@
 ; font-lock-doc-face
 ; font-lock-negation-char-face
 
-(defun M2-common()
+(defun M2-common ()
   "Set up features common to both Macaulay2 major modes."
   (set (make-local-variable 'comment-start) "-- ")
   (set (make-local-variable 'comment-end) "")
@@ -394,7 +394,7 @@ wrapped on the screen."
          (end (cdr bounds)))
     (list start end M2-symbols-completion-table :exclusive 'no)))
 
-(defun M2-to-end-of-prompt()
+(defun M2-to-end-of-prompt ()
      "Move to end of prompt matching `M2-comint-prompt-regexp' on this line."
      (interactive)
      (beginning-of-line)
@@ -403,7 +403,7 @@ wrapped on the screen."
 	   (goto-char (match-end 0))
 	 (back-to-indentation))))
 
-(defun M2-match-next-bracketed-input()
+(defun M2-match-next-bracketed-input ()
   "Move forward to the next region bracketed by <<< and >>>.
 Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[M2-send-to-program]."
@@ -414,7 +414,7 @@ can be executed with \\[M2-send-to-program]."
      (re-search-forward ">>>")
      (set-mark (match-beginning 0)))))
 
-(defun M2-match-previous-bracketed-input()
+(defun M2-match-previous-bracketed-input ()
   "Move backward to the previous region bracketed by <<< and >>>.
 Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[M2-send-to-program]."
@@ -522,20 +522,20 @@ See `M2-send-to-program' for more."
   "The buffer from which lines are obtained by `M2-get-input-from-demo-buffer'.
 Set it with `M2-set-demo-buffer'." )
 
-(defun M2-set-demo-buffer()
+(defun M2-set-demo-buffer ()
   "Set the variable `M2-demo-buffer' to the current buffer.
 Later, `M2-get-input-from-demo-buffer' can obtain lines from this buffer."
   (interactive)
   (setq M2-demo-buffer (current-buffer)))
 
-(defun M2-switch-to-demo-buffer()
+(defun M2-switch-to-demo-buffer ()
   "Switch to the buffer given by the variable `M2-demo-buffer'."
   (interactive)
   (switch-to-buffer M2-demo-buffer))
 
 (declare-function toggle-scroll-bar "scroll-bar")
 
-(defun M2-demo()
+(defun M2-demo ()
   "Set up a new frame with a big font for a Macaulay2 demo."
   (interactive)
   (let* ((f (prog1
@@ -662,7 +662,7 @@ time we send new input to the M2 process."
   "Determine whether the line is blank."
      (save-excursion (beginning-of-line) (skip-chars-forward " \t") (eolp)))
 
-(defun M2-next-line-blank()
+(defun M2-next-line-blank ()
   "Determine whether the next line is blank."
      (save-excursion
 	  (end-of-line)
@@ -672,7 +672,7 @@ time we send new input to the M2 process."
 (define-obsolete-function-alias
   'M2-newline-and-indent #'newline "1.23")
 
-(defun M2-electric-right-brace()
+(defun M2-electric-right-brace ()
   "Insert a right brace and start a new line."
      (interactive)
      (self-insert-command 1)
