@@ -111,7 +111,7 @@
   (M2-common)
   (setq comint-prompt-regexp M2-comint-prompt-regexp)
   (add-hook 'comint-input-filter-functions #'M2-comint-forget-errors nil t)
-  (add-hook 'comint-preoutput-filter-functions 'M2-info-help nil t)
+  (add-hook 'comint-preoutput-filter-functions #'M2-info-help nil t)
   (add-hook 'comint-output-filter-functions #'M2-comint-fix-unclosed nil t)
   (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
   (setq-local compilation-transform-file-match-alist
@@ -145,11 +145,11 @@
   (set (make-local-variable 'comment-start-skip) "-- *")
   (set (make-local-variable 'comint-input-autoexpand) nil)
   (set (make-local-variable 'transient-mark-mode) t)
-  (set (make-local-variable 'indent-line-function) 'M2-electric-tab)
+  (set (make-local-variable 'indent-line-function) #'M2-electric-tab)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
   (setq case-fold-search nil)
-  (add-hook 'completion-at-point-functions 'M2-completion-at-point nil t))
+  (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t))
 
 ;; key bindings
 
@@ -427,10 +427,10 @@ can be executed with \\[M2-send-to-program]."
      (match-end 0))))
 
 (define-obsolete-function-alias
-  'M2-send-input 'comint-send-input "1.23")
+  'M2-send-input #'comint-send-input "1.23")
 
 (define-obsolete-function-alias
-  'M2-send-to-program-or-jump-to-source-code 'comint-send-input "1.22")
+  'M2-send-to-program-or-jump-to-source-code #'comint-send-input "1.22")
 
 (defun M2--get-send-to-buffer ()
   "Helper function for `M2-send-to-program' and friends.
@@ -670,7 +670,7 @@ time we send new input to the M2 process."
 	      (progn (forward-char) (M2-blank-line)))))
 
 (define-obsolete-function-alias
-  'M2-newline-and-indent 'newline "1.23")
+  'M2-newline-and-indent #'newline "1.23")
 
 (defun M2-electric-right-brace()
   "Insert a right brace and start a new line."
@@ -732,8 +732,8 @@ by START and END."
   (setq M2-blink-region-flag (not M2-blink-region-flag)))
 
 ; enable syntax highlighting:
-(add-hook 'M2-comint-mode-hook 'turn-on-font-lock)
-(add-hook 'M2-mode-hook 'turn-on-font-lock)
+(add-hook 'M2-comint-mode-hook #'turn-on-font-lock)
+(add-hook 'M2-mode-hook #'turn-on-font-lock)
 
 (provide 'M2)
 
