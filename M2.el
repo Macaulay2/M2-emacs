@@ -442,8 +442,13 @@ Gets buffer for Macaulay2 inferior process from minibuffer or history."
    (cond (current-prefix-arg
 	  (read-from-minibuffer
 	   "buffer to send command to: "
-	   (concat "*" M2-current-tag "*")
-	   nil nil 'M2-send-to-buffer-history))
+	   (if M2-send-to-buffer-history
+	       (car M2-send-to-buffer-history)
+	     (concat "*" M2-current-tag "*"))
+	   nil nil
+	   (if M2-send-to-buffer-history
+	       '(M2-send-to-buffer-history . 1)
+	     'M2-send-to-buffer-history)))
 	 (M2-send-to-buffer-history (car M2-send-to-buffer-history))
 	 (t (concat "*" M2-current-tag "*")))))
 
