@@ -285,8 +285,11 @@
 
 (defun M2-add-width-option (command)
   "Set the print width specified in COMMAND to match the window width."
-  (concat (replace-regexp-in-string " +--print-width +[0-9]+\\| +$" "" command)
-	  " --print-width " (number-to-string (- (window-body-width) 1)) " "))
+  (let ((print-width (concat "--print-width "
+			     (number-to-string (1- (window-body-width))))))
+    (if (string-match "--print-width +[0-9]+" command)
+	(replace-match print-width t t command)
+      (concat command " " print-width))))
 
 ;;;###autoload
 (defun M2 (command name)
