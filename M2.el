@@ -84,9 +84,6 @@
     (define-key map  [ f4 ] #'M2-jog-right)
     (define-key map (kbd "C-c >") #'M2-jog-right)
     (define-key map [ (control C) ? ] #'M2-toggle-truncate-lines)
-    (define-key map [ (control C) l ] #'scroll-left)
-    (define-key map [ (control C) r ] #'scroll-right)
-    (define-key map [ (control C) c ] #'switch-to-completions)
     (define-key map (kbd "<f11>") #'M2-send-input-or-get-input-from-demo-buffer)
     map))
 
