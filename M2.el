@@ -280,6 +280,7 @@
 (defvar M2-shell-exe "/bin/sh" "The default shell executable name.")
 (defvar M2-history nil "The history of recent Macaulay2 command lines.")
 (defvar M2-send-to-buffer-history nil "The history of recent Macaulay2 send-to buffers.")
+(defvar M2-current-tag "M2" "The current Macaulay2 command name tag.")
 (defvar M2-tag-history () "The history of recent Macaulay2 command name tags.")
 (defvar M2-usual-jog 30 "Usual distance scrolled by `M2-jog-left' and `M2-jog-right'.")
 
@@ -304,14 +305,21 @@ the appropriate option for the width of the current window added to it."
    (list
     (cond
      (current-prefix-arg
-      (read-from-minibuffer "M2 command line: " (M2-add-width-option (if M2-history (car M2-history) M2-command))
-			    nil nil (if M2-history '(M2-history . 1) 'M2-history)))
+      (read-from-minibuffer
+       "M2 command line: "
+       (M2-add-width-option (if M2-history (car M2-history) M2-command))
+       nil nil (if M2-history '(M2-history . 1) 'M2-history)))
      (M2-history (M2-add-width-option (car M2-history)))
      (t (M2-add-width-option M2-command)))
     (cond
-     ((equal current-prefix-arg '(16)) (read-from-minibuffer "M2 buffer name tag: " "M2" nil nil 'M2-tag-history '("M2" "M2-1.1")))
-     (M2-tag-history (car M2-tag-history))
-     (t "M2"))))
+     ((equal current-prefix-arg '(16))
+      (setq M2-current-tag
+	    (read-from-minibuffer
+	     "M2 buffer name tag: "
+	     (if M2-tag-history (car M2-tag-history) M2-current-tag)
+	     nil nil
+	     (if M2-tag-history '(M2-tag-history . 1) 'M2-tag-history))))
+     (t M2-current-tag))))
   (let* ((buffer-name (concat "*" name "*"))
 	(buffer (get-buffer-create buffer-name)))
     (pop-to-buffer buffer)
@@ -432,9 +440,12 @@ can be executed with \\[M2-send-to-program]."
 Gets buffer for Macaulay2 inferior process from minibuffer or history."
   (list
    (cond (current-prefix-arg
-	  (read-from-minibuffer "buffer to send command to: " "*M2*" nil nil
-				'M2-send-to-buffer-history))
-	 (t (car M2-send-to-buffer-history)))))
+	  (read-from-minibuffer
+	   "buffer to send command to: "
+	   (concat "*" M2-current-tag "*")
+	   nil nil 'M2-send-to-buffer-history))
+	 (M2-send-to-buffer-history (car M2-send-to-buffer-history))
+	 (t (concat "*" M2-current-tag "*")))))
 
 (defun M2--send-to-program-helper (send-to-buffer start end)
   "Helper function for `M2-send-to-program' and friends.
