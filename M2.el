@@ -278,8 +278,8 @@
   :group 'Macaulay2)
 
 (defvar M2-shell-exe "/bin/sh" "The default shell executable name.")
-(defvar M2-history (list M2-command) "The history of recent Macaulay2 command lines.")
-(defvar M2-send-to-buffer-history '("*M2*") "The history of recent Macaulay2 send-to buffers.")
+(defvar M2-history nil "The history of recent Macaulay2 command lines.")
+(defvar M2-send-to-buffer-history nil "The history of recent Macaulay2 send-to buffers.")
 (defvar M2-tag-history () "The history of recent Macaulay2 command name tags.")
 (defvar M2-usual-jog 30 "Usual distance scrolled by `M2-jog-left' and `M2-jog-right'.")
 
