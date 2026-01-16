@@ -49,20 +49,20 @@
 
 (defun M2-define-common-keys (map)
   "Define keys in MAP that are common to both `M2-mode' and `M2-comint-mode'."
-  (define-key map [ f12 ] #'M2) ; the user may want to make this one global
-  (define-key map [ (meta f12) ] #'M2-demo)
-  (define-key map [ (control f11) ] #'M2-switch-to-demo-buffer)
-  (define-key map [ (meta f11) ] #'M2-set-demo-buffer)
-  (define-key map "\^C\t" #'completion-at-point)
-  (define-key map [(meta tab)] #'completion-at-point)
-  (define-key map [ f10 ] #'M2-match-next-bracketed-input)
-  (define-key map [ (meta f10) ] #'M2-match-previous-bracketed-input))
+  (define-key map (kbd "<f12>") #'M2) ; user may want to make this one global
+  (define-key map (kbd "M-<f12>") #'M2-demo)
+  (define-key map (kbd "C-<f11>") #'M2-switch-to-demo-buffer)
+  (define-key map (kbd "M-<f11>") #'M2-set-demo-buffer)
+  (define-key map (kbd "C-c TAB") #'completion-at-point)
+  (define-key map (kbd "M-<tab>") #'completion-at-point)
+  (define-key map (kbd "<f10>") #'M2-match-next-bracketed-input)
+  (define-key map (kbd "M-<f10>") #'M2-match-previous-bracketed-input))
 
 (defvar M2-mode-map
   (let ((map (make-sparse-keymap)))
     (M2-define-common-keys map)
-    (define-key map "\177" #'backward-delete-char-untabify)
-    (define-key map ";" #'M2-electric-semi)
+    (define-key map (kbd "DEL") #'backward-delete-char-untabify)
+    (define-key map (kbd ";") #'M2-electric-semi)
     (define-key map (kbd "<C-return>") #'M2-send-to-program)
     (define-key map (kbd "<f11>") #'M2-send-to-program)
     (define-key map (kbd "C-c C-j") #'M2-send-line-to-program)
@@ -76,14 +76,14 @@
 (defvar M2-comint-mode-map
   (let ((map (make-sparse-keymap)))
     (M2-define-common-keys map)
-    (define-key map "\t" #'completion-at-point)
-    (define-key map [ f2 ] #'M2-position-point)
-    (define-key map [ (control C) ?. ] #'M2-position-point)
-    (define-key map [ f3 ] #'M2-jog-left)
+    (define-key map (kbd "TAB") #'completion-at-point)
+    (define-key map (kbd "<f2>") #'M2-position-point)
+    (define-key map (kbd "C-S-c .") #'M2-position-point)
+    (define-key map (kbd "<f3>") #'M2-jog-left)
     (define-key map (kbd "C-c <") #'M2-jog-left)
-    (define-key map  [ f4 ] #'M2-jog-right)
+    (define-key map (kbd "<f4>") #'M2-jog-right)
     (define-key map (kbd "C-c >") #'M2-jog-right)
-    (define-key map [ (control C) ? ] #'M2-toggle-truncate-lines)
+    (define-key map (kbd "C-S-c SPC") #'M2-toggle-truncate-lines)
     (define-key map (kbd "<f11>") #'M2-send-input-or-get-input-from-demo-buffer)
     map))
 
