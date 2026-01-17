@@ -698,6 +698,12 @@ time we send new input to the M2 process."
 (define-obsolete-function-alias
   'M2-newline-and-indent #'newline "1.23")
 
+(defun M2-indent-line ()
+  "Indent the current line based on the paren depth."
+  (beginning-of-line)
+  (delete-horizontal-space)
+  (indent-to (M2-this-line-indent-amount)))
+
 (defun M2-electric-right-brace ()
   "Insert a right brace and possibly re-indent.
 If `electric-indent-mode' is enabled and we are at the front of the current
@@ -707,10 +713,7 @@ line, then re-indent."
   (when electric-indent-mode
     (save-excursion
       (backward-char)
-      (when (M2-in-front)
-	(beginning-of-line)
-	(delete-horizontal-space)
-	(indent-to (M2-this-line-indent-amount))))))
+      (when (M2-in-front) (M2-indent-line)))))
 
 (defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `M2-electric-tab' should insert a tab."
@@ -719,17 +722,25 @@ line, then re-indent."
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
-If called by command in `M2-insert-tab-commands', and if the point is either
-to right of non-whitespace characters in the same line or if the line
+If called by command in `M2-insert-tab-commands', and if the line
 is blank, then insert `M2-indent-level' spaces.  Otherwise, indent the
 line based on the depth of the parentheses in the code."
   (interactive)
-  (indent-to
-   (prog1 (if (and (memq this-command M2-insert-tab-commands)
-		   (or (not (M2-in-front)) (M2-blank-line)))
-	      (+ (current-column) M2-indent-level)
-	    (M2-this-line-indent-amount))
-     (delete-horizontal-space))))
+  ;; we've manually pressed TAB
+  (if (memq this-command M2-insert-tab-commands)
+      ;; blank line => just add some spaces/tabs
+      (if (M2-blank-line)
+	  (indent-to (prog1 (+ (current-column) M2-indent-level)
+		       (delete-horizontal-space)))
+	;; otherwise, re-indent from the beginning of the line
+	(if (<= (current-column) (current-indentation))
+	    (M2-indent-line)
+	  (save-excursion (M2-indent-line))))
+    ;; if we haven't manually pressed TAB (e.g., re-indentation from newline)
+    ;; then don't go to the beginning of the line or we'll mess up indentation
+    ;; in SimpleDoc strings
+    (delete-horizontal-space)
+    (indent-to (M2-this-line-indent-amount))))
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
