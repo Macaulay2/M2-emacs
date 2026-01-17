@@ -54,6 +54,17 @@ Pass ARGLIST and BODY as in `defun'."
        (intern (replace-regexp-in-string "^macaulay2" "M2" (symbol-name ',name)))
        ',name "1.26.05")))
 
+(defmacro macaulay2-legacy-defcustom (symbol standard doc &rest args)
+  "Define a variable SYMBOL and mark its legacy M2-namespaced version obsolete.
+Pass STANDARD, DOC, and ARGS as in `defcustom'."
+  (declare (doc-string 3) (debug (name body))
+           (indent defun))
+  `(progn
+     (defcustom ,symbol ,standard ,doc ,@args)
+     (define-obsolete-variable-alias
+       (intern (replace-regexp-in-string "^macaulay2" "M2" (symbol-name ',symbol)))
+       ',symbol "1.26.05" ,doc)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; key bindings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,7 +123,7 @@ Pass ARGLIST and BODY as in `defun'."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . macaulay2-mode))
 
-(defcustom macaulay2-indent-level 4
+(macaulay2-legacy-defcustom macaulay2-indent-level 4
   "Indentation increment in Macaulay2 mode."
   :type 'integer
   :group 'macaulay2)
@@ -278,11 +289,11 @@ Pass ARGLIST and BODY as in `defun'."
 ;; macaulay2 interpreter
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defcustom macaulay2-exe "M2"
+(macaulay2-legacy-defcustom macaulay2-exe "M2"
   "The default Macaulay2 executable name."
   :type 'string
   :group 'macaulay2)
-(defcustom macaulay2-command
+(macaulay2-legacy-defcustom macaulay2-command
   (concat macaulay2-exe " --no-readline --print-width " (number-to-string (- (window-body-width) 1)) " ")
   "The default Macaulay2 command line."
   :type 'string
@@ -704,7 +715,7 @@ time we send new input to the macaulay2 process."
      (self-insert-command 1)
      (and (eolp) (macaulay2-next-line-blank) (< (macaulay2-paren-change) 0) (newline nil t)))
 
-(defcustom macaulay2-insert-tab-commands '(indent-for-tab-command org-cycle)
+(macaulay2-legacy-defcustom macaulay2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `macaulay2-electric-tab' should insert a tab."
   :type '(repeat function)
   :group 'macaulay2)
@@ -725,13 +736,13 @@ based on the depth of the parentheses in the code."
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
-(defcustom macaulay2-blink-region-flag t
+(macaulay2-legacy-defcustom macaulay2-blink-region-flag t
   "Non-nil means evaluated region is highlighted.
 The duration is `macaulay2-blink-delay' seconds."
   :type 'boolean
   :group 'macaulay2)
 
-(defcustom macaulay2-blink-delay .3
+(macaulay2-legacy-defcustom macaulay2-blink-delay .3
   "The number of seconds that the evaluated region is highlighted.
 Only if `macaulay2-blink-region-flag' is non-nil."
   :type 'number
