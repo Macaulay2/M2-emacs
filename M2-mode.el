@@ -8,7 +8,7 @@
 
 ;;; Commentary:
 ;; This file used to contain most of M2-mode definitions, which have since moved
-;; to M2.el.  This file remains for compatibility, or for new features.
+;; to macaulay2.el.  This file remains for compatibility, or for new features.
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -25,8 +25,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-(unless (fboundp 'M2)
-  (load "M2"))
+(unless (fboundp 'macaulay2)
+  (load "macaulay2"))
 
 ;;; Code:
 
