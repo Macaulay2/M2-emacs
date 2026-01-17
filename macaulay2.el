@@ -43,6 +43,17 @@
   :group 'languages
   :prefix "macaulay2-")
 
+(defmacro macaulay2-legacy-defun (name arglist &rest body)
+  "Define a function NAME and mark its legacy M2-namespaced version obsolete.
+Pass ARGLIST and BODY as in `defun'."
+  (declare (doc-string 3) (indent defun))
+  `(progn
+     (defun ,name ,arglist
+       ,@body)
+     (define-obsolete-function-alias
+       (intern (replace-regexp-in-string "^macaulay2" "M2" (symbol-name ',name)))
+       ',name "1.26.05")))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; key bindings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -340,7 +351,7 @@ the appropriate option for the width of the current window added to it."
   "Return whether the current column is visible in the window."
   (and (< (macaulay2-left-hand-column) (current-column))
        (< (current-column) (macaulay2-right-hand-column))))
-(defun macaulay2-position-point (pos)
+(macaulay2-legacy-defun macaulay2-position-point (pos)
   "Scroll display horizontally.
 Point ends up at center of screen or at column position given by POS."
   (interactive "P")
@@ -350,7 +361,7 @@ Point ends up at center of screen or at column position given by POS."
     (if (< pos 0) (setq pos (+ pos (window-body-width)))))
   (set-window-hscroll (selected-window) (+ 1 (- (current-column) pos))))
 
-(defun macaulay2-jog-right (arg)
+(macaulay2-legacy-defun macaulay2-jog-right (arg)
   "Move point right and scroll display so it remains visible.
 Optional prefix argument ARG tells how far to move."
   (interactive "P")
@@ -361,7 +372,7 @@ Optional prefix argument ARG tells how far to move."
      (min (save-excursion (end-of-line) (point)) (+ (point) macaulay2-usual-jog))))
   (if (not (macaulay2-on-screen)) (macaulay2-position-point -2)))
 
-(defun macaulay2-jog-left (arg)
+(macaulay2-legacy-defun macaulay2-jog-left (arg)
   "Move point left and scroll display so it remains visible.
 Optional prefix argument ARG tells how far to move."
   (interactive "P")
@@ -372,7 +383,7 @@ Optional prefix argument ARG tells how far to move."
      (max (save-excursion (beginning-of-line) (point)) (- (point) macaulay2-usual-jog))))
   (if (not (macaulay2-on-screen)) (macaulay2-position-point 1)))
 
-(defun macaulay2-toggle-truncate-lines ()
+(macaulay2-legacy-defun macaulay2-toggle-truncate-lines ()
   "Toggle the value of `truncate-lines'.
 This is the variable which determines whether long lines are truncated or
 wrapped on the screen."
@@ -397,7 +408,7 @@ wrapped on the screen."
          (end (cdr bounds)))
     (list start end macaulay2-symbols-completion-table :exclusive 'no)))
 
-(defun macaulay2-to-end-of-prompt ()
+(macaulay2-legacy-defun macaulay2-to-end-of-prompt ()
      "Move to end of prompt matching `macaulay2-comint-prompt-regexp' on this line."
      (interactive)
      (beginning-of-line)
@@ -406,7 +417,7 @@ wrapped on the screen."
 	   (goto-char (match-end 0))
 	 (back-to-indentation))))
 
-(defun macaulay2-match-next-bracketed-input ()
+(macaulay2-legacy-defun macaulay2-match-next-bracketed-input ()
   "Move forward to the next region bracketed by <<< and >>>.
 Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[macaulay2-send-to-program]."
@@ -417,7 +428,7 @@ can be executed with \\[macaulay2-send-to-program]."
      (re-search-forward ">>>")
      (set-mark (match-beginning 0)))))
 
-(defun macaulay2-match-previous-bracketed-input ()
+(macaulay2-legacy-defun macaulay2-match-previous-bracketed-input ()
   "Move backward to the previous region bracketed by <<< and >>>.
 Mark it with the point and the mark.  After marking the region, the code
 can be executed with \\[macaulay2-send-to-program]."
@@ -469,13 +480,13 @@ SEND-TO-BUFFER."
       (comint-send-input)
       (set-window-point (get-buffer-window send-to-buffer 'visible) (point)))))
 
-(defun macaulay2-send-region-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-region-to-program (send-to-buffer)
   "Send the current region to the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
   (macaulay2--send-to-program-helper send-to-buffer (region-beginning) (region-end)))
 
-(defun macaulay2-send-line-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-line-to-program (send-to-buffer)
   "Send the current line to the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
@@ -486,7 +497,7 @@ See `macaulay2-send-to-program' for more."
   ;; add a newline after a nonempty line at the end of the buffer
   (when (and (eobp) (not (bolp))) (newline)))
 
-(defun macaulay2-send-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-to-program (send-to-buffer)
   "Send the current line or region to the macaulay2 process in SEND-TO-BUFFER.
 Send the current line except for a possible prompt, or the region, if the
 mark is active, to Macaulay2 in its buffer, making its window visible.
@@ -499,25 +510,25 @@ sent can be entered, with history."
 	 (macaulay2-send-region-to-program send-to-buffer)
        (macaulay2-send-line-to-program send-to-buffer)))
 
-(defun macaulay2-send-buffer-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-buffer-to-program (send-to-buffer)
   "Send the entire buffer to the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
   (macaulay2--send-to-program-helper send-to-buffer (point-min) (point-max)))
 
-(defun macaulay2-send-buffer-from-beg-to-here-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-buffer-from-beg-to-here-to-program (send-to-buffer)
   "Send everything before the the point the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
   (macaulay2--send-to-program-helper send-to-buffer (point-min) (point)))
 
-(defun macaulay2-send-buffer-from-here-to-end-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-buffer-from-here-to-end-to-program (send-to-buffer)
   "Send everything after the the point the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
   (macaulay2--send-to-program-helper send-to-buffer (point) (point-max)))
 
-(defun macaulay2-send-paragraph-to-program (send-to-buffer)
+(macaulay2-legacy-defun macaulay2-send-paragraph-to-program (send-to-buffer)
   "Send the current paragraph to the macaulay2 process in SEND-TO-BUFFER.
 See `macaulay2-send-to-program' for more."
   (interactive (macaulay2--get-send-to-buffer))
@@ -533,20 +544,20 @@ See `macaulay2-send-to-program' for more."
   "Buffer from which lines are obtained by `macaulay2-get-input-from-demo-buffer'.
 Set it with `macaulay2-set-demo-buffer'." )
 
-(defun macaulay2-set-demo-buffer ()
+(macaulay2-legacy-defun macaulay2-set-demo-buffer ()
   "Set the variable `macaulay2-demo-buffer' to the current buffer.
 Later, `macaulay2-get-input-from-demo-buffer' can obtain lines from this buffer."
   (interactive)
   (setq macaulay2-demo-buffer (current-buffer)))
 
-(defun macaulay2-switch-to-demo-buffer ()
+(macaulay2-legacy-defun macaulay2-switch-to-demo-buffer ()
   "Switch to the buffer given by the variable `macaulay2-demo-buffer'."
   (interactive)
   (switch-to-buffer macaulay2-demo-buffer))
 
 (declare-function toggle-scroll-bar "scroll-bar")
 
-(defun macaulay2-demo ()
+(macaulay2-legacy-defun macaulay2-demo ()
   "Set up a new frame with a big font for a Macaulay2 demo."
   (interactive)
   (let* ((f (prog1
@@ -567,7 +578,7 @@ Later, `macaulay2-get-input-from-demo-buffer' can obtain lines from this buffer.
     (with-current-buffer "*M2*"
       (setq comint-scroll-show-maximum-output t))))
 
-(defun macaulay2-get-input-from-demo-buffer ()
+(macaulay2-legacy-defun macaulay2-get-input-from-demo-buffer ()
   "Copy the current line from `macaulay2-demo-buffer' to the prompt."
   (interactive)
   (insert (with-current-buffer macaulay2-demo-buffer
@@ -579,7 +590,7 @@ Later, `macaulay2-get-input-from-demo-buffer' can obtain lines from this buffer.
 		   (line-end-position)))
 	      (forward-line)))))
 
-(defun macaulay2-send-input-or-get-input-from-demo-buffer ()
+(macaulay2-legacy-defun macaulay2-send-input-or-get-input-from-demo-buffer ()
   "Either send input to Macaulay2 or get input from the demo buffer.
 If current line is blank, then copy the current line of `macaulay2-demo-buffer'.
 Otherwise, send the input to Macaulay2."
@@ -642,7 +653,7 @@ time we send new input to the macaulay2 process."
     (car (parse-partial-sexp (prog2 (beginning-of-line) (point))
 			     (prog2 (end-of-line) (point))))))
 
-(defun macaulay2-electric-semi ()
+(macaulay2-legacy-defun macaulay2-electric-semi ()
   "Insert a semicolon and start a new line."
      (interactive)
      (insert ?\;)
@@ -683,7 +694,7 @@ time we send new input to the macaulay2 process."
 (define-obsolete-function-alias
   'macaulay2-newline-and-indent #'newline "1.23")
 
-(defun macaulay2-electric-right-brace ()
+(macaulay2-legacy-defun macaulay2-electric-right-brace ()
   "Insert a right brace and start a new line."
      (interactive)
      (self-insert-command 1)
@@ -694,7 +705,7 @@ time we send new input to the macaulay2 process."
   :type '(repeat function)
   :group 'macaulay2)
 
-(defun macaulay2-electric-tab ()
+(macaulay2-legacy-defun macaulay2-electric-tab ()
   "`indent-line-function' for Macaulay2.
 If called by command in `macaulay2-insert-tab-commands', and if the point is
 either to right of non-whitespace characters in the same line or if the line is
@@ -738,7 +749,7 @@ bounded by START and END."
                     (lambda ()
                       (delete-overlay macaulay2-current-region-overlay)))))
 
-(defun macaulay2-toggle-blink-region-flag ()
+(macaulay2-legacy-defun macaulay2-toggle-blink-region-flag ()
   "Toggle the value of `macaulay2-blink-region-flag'."
   (interactive)
   (setq macaulay2-blink-region-flag (not macaulay2-blink-region-flag)))
