@@ -104,7 +104,7 @@
 (defcustom M2-indent-level 4
   "Indentation increment in Macaulay2 mode."
   :type 'integer
-  :group 'Macaulay2)
+  :group 'M2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-comint-mode
@@ -270,12 +270,12 @@
 (defcustom M2-exe "M2"
   "The default Macaulay2 executable name."
   :type 'string
-  :group 'Macaulay2)
+  :group 'M2)
 (defcustom M2-command
   (concat M2-exe " --no-readline --print-width " (number-to-string (- (window-body-width) 1)) " ")
   "The default Macaulay2 command line."
   :type 'string
-  :group 'Macaulay2)
+  :group 'M2)
 
 (defvar M2-shell-exe "/bin/sh" "The default shell executable name.")
 (defvar M2-history nil "The history of recent Macaulay2 command lines.")
@@ -692,7 +692,7 @@ time we send new input to the M2 process."
 (defcustom M2-insert-tab-commands '(indent-for-tab-command org-cycle)
   "Commands for which `M2-electric-tab' should insert a tab."
   :type '(repeat function)
-  :group 'Macaulay2)
+  :group 'M2)
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
@@ -713,13 +713,13 @@ line based on the depth of the parentheses in the code."
 (defcustom M2-blink-region-flag t
   "Non-nil means evaluated region is highlighted for `M2-blink-delay' seconds."
   :type 'boolean
-  :group 'Macaulay2)
+  :group 'M2)
 
 (defcustom M2-blink-delay .3
   "The number of seconds that the evaluated region is highlighted.
 Only if `M2-blink-region-flag' is non-nil."
   :type 'number
-  :group 'Macaulay2)
+  :group 'M2)
 
 (defvar M2-current-region-overlay
   (let ((overlay (make-overlay (point) (point))))
