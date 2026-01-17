@@ -341,6 +341,10 @@ the appropriate option for the width of the current window added to it."
 	(text-scale-set n)))
     buffer))
 
+;;;###autoload
+(define-obsolete-function-alias
+  'M2 #'macaulay2 "1.26.05")
+
 (defun macaulay2-left-hand-column ()
   "Return the column at the left hand side of the window."
   (window-hscroll))
