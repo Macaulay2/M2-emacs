@@ -25,6 +25,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+(warn "`M2' is obsolete (as of 1.26.05); use `macaulay2' instead.")
+
 (unless (fboundp 'macaulay2)
   (load "macaulay2"))
 
