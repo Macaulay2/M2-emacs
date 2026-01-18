@@ -3,7 +3,7 @@ Emacs Package for Macaulay2
 
 To get started with running Macaulay2 with Emacs, look at the file `M2-emacs-help.txt`, which is a text version of the documentation node available via `help "running Macaulay2 in emacs"`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which is a text version of the documentation node available via `help "editing Macaulay2 code with emacs"`.
 
-The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el.gz`.
+The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
 
 ## Installation
 
@@ -48,13 +48,13 @@ This requires Emacs version 30 or greater.
 #### [Quelpa](https://github.com/quelpa/quelpa)
 
 ```elisp
-(quelpa '(M2 :repo "Macaulay2/M2-emacs" :fetcher github :files ("*.el" "*.el.gz")))
+(quelpa '(M2 :repo "Macaulay2/M2-emacs" :fetcher github :files ("*.el")))
 ```
 
 ####  [straight.el](https://github.com/radian-software/straight.el)
 
 ```elisp
-(straight-use-package '(M2 :type git :host github :repo "Macaulay2/M2-emacs" :files ("*.el" "*.el.gz")))
+(straight-use-package '(M2 :type git :host github :repo "Macaulay2/M2-emacs" :files ("*.el")))
 ```
 
 ### Installing from the Git Repository
