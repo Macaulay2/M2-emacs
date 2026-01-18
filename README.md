@@ -3,7 +3,7 @@ Emacs Package for Macaulay2
 
 To get started with running Macaulay2 with Emacs, look at the file `M2-emacs-help.txt`, which is a text version of the documentation node available via `help "running Macaulay2 in emacs"`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which is a text version of the documentation node available via `help "editing Macaulay2 code with emacs"`.
 
-The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
+The file `macaulay2.el` provides modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols and autocompletion symbols are defined in `macaulay2-symbols.el`.
 
 ## Installation
 
@@ -40,21 +40,21 @@ The M2-mode package can be installed with a single line of code using several pa
 This requires Emacs version 30 or greater.
 
 ```elisp
-(use-package M2
+(use-package macaulay2
   :vc (:url "https://github.com/Macaulay2/M2-emacs")
-  :bind ("<f12>" . M2))
+  :bind ("<f12>" . macaulay2))
 ```
 
 #### [Quelpa](https://github.com/quelpa/quelpa)
 
 ```elisp
-(quelpa '(M2 :repo "Macaulay2/M2-emacs" :fetcher github :files ("*.el")))
+(quelpa '(macaulay2 :repo "Macaulay2/M2-emacs" :fetcher github :files ("*.el")))
 ```
 
 ####  [straight.el](https://github.com/radian-software/straight.el)
 
 ```elisp
-(straight-use-package '(M2 :type git :host github :repo "Macaulay2/M2-emacs" :files ("*.el")))
+(straight-use-package '(macaulay2 :type git :host github :repo "Macaulay2/M2-emacs" :files ("*.el")))
 ```
 
 ### Installing from the Git Repository
@@ -63,18 +63,18 @@ For those who like to live dangerously, or to develop this package, you can also
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/Macaulay2
+git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/macaulay2
 ```
 
 2. Add the following to your Emacs init file:
 ```elisp
-(add-to-list 'load-path "~/.emacs.d/site-lisp/Macaulay2")
-(require 'M2-mode)
+(add-to-list 'load-path "~/.emacs.d/site-lisp/macaulay2")
+(require 'macaulay2)
 ```
 
-Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/Macaulay2` directory.
+Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/macaulay2` directory.
 
-## Why install M2-mode without Macaulay2?
+## Why install macaulay2-mode without Macaulay2?
 
 Under certain circumstances, users who are unable to install Macaulay2 locally (e.g. the version provided by the university cluster is too old) can still use this package and choose an alternative method for running the Macaulay2 executable:
 
@@ -83,7 +83,7 @@ Under certain circumstances, users who are unable to install Macaulay2 locally (
   - Remotely via SSH to a containerized version of Habanero!
   - Locally via Docker, e.g. `docker run -it --entrypoint M2 mahrud/macaulay2:v1.15`
 
-2. Press `M-x M2` to start Macaulay2.
+2. Press `M-x macaulay2` to start Macaulay2.
 
 Using this package, any machine running Emacs can run M2 via SSH or Docker, and your files would still be saved locally.
 
