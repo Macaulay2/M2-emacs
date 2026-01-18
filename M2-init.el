@@ -33,10 +33,13 @@
 
 ;;; Code:
 
-(autoload 'M2             "M2" "Run Macaulay2 in an emacs buffer" t)
-(autoload 'M2-mode        "M2" "Macaulay2 editing mode" t)
-(autoload 'M2-comint-mode "M2" "Macaulay2 command interpreter mode" t)
+(autoload 'macaulay2             "macaulay2" "Run Macaulay2 in a buffer" t)
+(autoload 'macaulay2-mode        "macaulay2" "Macaulay2 editing mode" t)
+(autoload 'macaulay2-comint-mode "macaulay2" "Macaulay2 command interpreter mode" t)
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
+
+;; legacy support
+(autoload 'M2 "macaulay2" "Run Macaulay2 in a buffer" t)
 
 (provide 'M2-init)
 
