@@ -42,7 +42,7 @@ This requires Emacs version 30 or greater.
 ```elisp
 (use-package M2
   :vc (:url "https://github.com/Macaulay2/M2-emacs")
-  :bind ("<f12>" . macaulay2))
+  :bind ("<f12>" . M2))
 ```
 
 #### [Quelpa](https://github.com/quelpa/quelpa)
