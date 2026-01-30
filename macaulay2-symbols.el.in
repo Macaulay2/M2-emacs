@@ -1,4 +1,4 @@
-;;; M2-symbols.el --- Generated symbols used by the Macaulay2 major modes -*- lexical-binding: t -*-
+;;; macaulay2-symbols.el --- Generated symbols used by the Macaulay2 major modes -*- lexical-binding: t -*-
 
 ;; Copyright (C) 1997-2026 The Macaulay2 Authors
 
@@ -32,23 +32,23 @@
 
 ;;; Code:
 
-(defconst M2-symbols-version
+(defconst macaulay2-symbols-version
   "@M2VERSION@"
   "The M2 version used to generate the symbols used by the M2 major modes.")
 
-(defconst M2-symbols-completion-table
+(defconst macaulay2-symbols-completion-table
   '( @M2SYMBOLS@ )
   "A list of the symbols available in Macaulay2, for use with dynamic completion." )
 
-(defconst M2-symbols-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
+(defconst macaulay2-symbols-keyword-regexp  (regexp-opt '( @M2KEYWORDS@  ) 'words)
   "Regular expression for Macaulay2 keywords.")
-(defconst M2-symbols-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
+(defconst macaulay2-symbols-type-regexp     (regexp-opt '( @M2DATATYPES@ ) 'words)
   "Regular expression for Macaulay2 types.")
-(defconst M2-symbols-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
+(defconst macaulay2-symbols-function-regexp (regexp-opt '( @M2FUNCTIONS@ ) 'words)
   "Regular expression for Macaulay2 functions.")
-(defconst M2-symbols-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
+(defconst macaulay2-symbols-constant-regexp (regexp-opt '( @M2CONSTANTS@ ) 'words)
   "Regular expression for Macaulay2 constants.")
 
-(provide 'M2-symbols)
+(provide 'macaulay2-symbols)
 
-;;; M2-symbols.el ends here
+;;; macaulay2-symbols.el ends here
