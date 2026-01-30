@@ -123,6 +123,10 @@ Pass STANDARD, DOC, and ARGS as in `defcustom'."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . macaulay2-mode))
 
+;;;###autoload
+(define-obsolete-function-alias
+  'M2-mode #'macaulay2-mode "1.26.05")
+
 (macaulay2-legacy-defcustom macaulay2-indent-level 4
   "Indentation increment in Macaulay2 mode."
   :type 'integer
@@ -183,6 +187,10 @@ Pass STANDARD, DOC, and ARGS as in `defcustom'."
   (setq-local compilation-transform-file-match-alist
 	      macaulay2-transform-file-match-alist)
   (compilation-shell-minor-mode 1))
+
+;;;###autoload
+(define-obsolete-function-alias
+  'M2-comint-mode #'macaulay2-comint-mode "1.26.05")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common definitions
