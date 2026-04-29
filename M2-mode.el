@@ -5,6 +5,7 @@
 ;; Version: 1.25.11
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
+;; Package-Requires: ((emacs "24.1"))
 
 ;;; Commentary:
 ;; This file used to contain most of M2-mode definitions, which have since moved
