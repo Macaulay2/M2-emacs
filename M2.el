@@ -35,13 +35,368 @@
 
 (require 'font-lock)
 (require 'comint)
+(require 'smie)
 (require 'thingatpt)
 (require 'M2-symbols)
+(require 'M2-operators)
 
 (defgroup M2 nil
   "Support for Macaulay2 language development."
   :group 'languages
   :prefix "M2-")
+
+(defcustom M2-indent-level 4
+  "Indentation increment in Macaulay2 mode."
+  :type 'integer
+  :group 'M2)
+
+(defcustom M2-simple-doc-indent-level 2
+  "Indentation increment inside a SimpleDoc string.
+SimpleDoc is customarily written in steps of two, and being a language
+of its own it is indented by TAB alone rather than computed.  See
+`M2-simple-doc-string-openers'."
+  :type 'integer
+  :group 'M2)
+
+;;; SMIE (Simple Minded Indentation Engine)
+
+;; The operator tables come from M2-operators.el, which is generated from the
+;; parsing tables of Macaulay2 itself; see generate-operators.m2.
+
+(eval-and-compile
+
+  (defconst M2-smie--block-keywords
+    '("if" "then" "else" "try" "except" "while" "for" "new"
+      "do" "list" "of" "from" "in" "to" "when")
+    "Macaulay2 keywords that introduce or continue a block expression.")
+
+  (defconst M2-smie--operators
+    ;; "///" is here so that a doc or TEST string delimiter lexes as one
+    ;; token rather than as the quotient operators // and /.  Its contents
+    ;; are deliberately left as ordinary code, not marked as a string.
+    (let ((ops (append M2-operators-postfix '("<|" "|>" ";" "///"))))
+      (dolist (row M2-operators-binary)
+        (dolist (op (cdr row))
+          ;; The word operators (and, or, xor) are lexed as words.
+          (unless (string-match-p "\\`[[:alpha:]]" op)
+            (push op ops))))
+      (delete-dups ops))
+    "Every Macaulay2 operator spelled with punctuation.")
+
+  (defconst M2-smie--operator-regexp (regexp-opt M2-smie--operators)
+    "Regexp matching the longest Macaulay2 operator at point.")
+
+  (defconst M2-smie--continuation-tokens
+    (let ((toks (append M2-smie--block-keywords
+                        '("(" "[" "{" "<|" "and" "or" "xor" "not"
+                          ;; `quote' expressions: an identifier must follow.
+                          "symbol" "global" "local"
+                          "threadLocal" "threadVariable"))))
+      (dolist (row M2-operators-binary)
+        (dolist (op (cdr row)) (push op toks)))
+      (delete-dups toks))
+    "Tokens after which a newline continues the current statement.
+Every binary and prefix operator qualifies, since a right operand is still
+expected.  Postfix operators do not, and neither do the prefix control-flow
+words (`return', `break', `continue', ...): each of those can legitimately
+be the last thing on a line."))
+
+(defconst M2-smie-grammar
+  (eval-when-compile
+    (smie-prec2->grammar
+     (smie-merge-prec2s
+      (smie-bnf->prec2
+       ;; Every slot but the final body uses BEXP, which admits only
+       ;; bracketed expressions.  With EXP throughout, `smie-bnf->prec2'
+       ;; relates every pair of inner keywords in both directions at once
+       ;; (each is both preceded by EXP and a member of its last-ops), and
+       ;; `smie-prec2->grammar' then reports an unresolvable precedence
+       ;; cycle such as "then < in < then".  Resolvers cannot help: they
+       ;; only apply where a conflict already exists.  Final bodies stay
+       ;; EXP, so `else if' chains and do/from bodies remain exact.
+       '((bexp ("(" exps ")") ("[" exps "]") ("{" exps "}") ("<|" exps "|>"))
+         (exp (bexp)
+              ("if"  bexp "then" exp)
+              ("if"  bexp "then" bexp "else" exp)
+              ("try" bexp "then" exp)
+              ("try" bexp "then" bexp "else" exp)
+              ("try" bexp "else" exp)
+              ("try" bexp "then" bexp "except" bexp "do" exp)
+              ("try" bexp "except" bexp "do" exp)
+              ("while" bexp "do" exp)
+              ("while" bexp "list" exp)
+              ("while" bexp "list" bexp "do" exp)
+              ("for" bexp "in" bexp "do" exp)
+              ("for" bexp "in" bexp "list" exp)
+              ("for" bexp "in" bexp "list" bexp "do" exp)
+              ("for" bexp "in" bexp "when" bexp "list" bexp "do" exp)
+              ("for" bexp "from" bexp "do" exp)
+              ("for" bexp "from" bexp "to" bexp "when" bexp "do" exp)
+              ("for" bexp "from" bexp "list" bexp "do" exp)
+              ("for" bexp "to" bexp "do" exp)
+              ("for" bexp "to" bexp "list" exp)
+              ("for" bexp "when" bexp "do" exp)
+              ("for" bexp "do" exp)
+              ("for" bexp "list" bexp "do" exp)
+              ("new" bexp "of" exp)
+              ("new" bexp "from" exp)
+              ("new" bexp "of" bexp "from" exp))
+         (exps (exps ";" exps) (exps "," exps) (exp)))
+       '((assoc ";")) '("," > ",") '(";" < ",") '("," > ";"))
+      (smie-precs->prec2 M2-operators-binary))))
+  "Macaulay2 grammar table for Simple Minded Indentation Engine.")
+
+(defsubst M2-smie--comment-start-p (pos)
+  "Return non-nil if a comment can begin at POS.
+`M2-syntax-propertize-function' clears the comment flags from -- inside
+comint output blocks, so ask the syntax table rather than just matching
+the characters."
+  ;; Bit 16 of a raw syntax descriptor is the \"1\" flag: this character can
+  ;; be the first of a two-character comment opener.
+  (let ((syntax (car (syntax-after pos))))
+    (and syntax (/= 0 (logand syntax (ash 1 16))))))
+
+(defsubst M2-smie--string-delimiter-p (pos)
+  "Return non-nil if the character at POS is a string delimiter.
+Unlike `char-syntax', this honors `syntax-table' text properties.  Note
+that ///.../// is not a string as far as Macaulay2 mode is concerned."
+  ;; 7 is the string-quote class, 15 the generic-string-fence class.
+  (memq (syntax-class (syntax-after pos)) '(7 15)))
+
+(defvar-local M2-smie--separator-cache nil
+  "Memo for `M2-smie--newline-separator-p'.
+A cons of a key describing the buffer state and a hash table mapping the
+position of a newline to whether it separates two statements.  The key
+covers the accessible portion as well as the chars-modified-tick, since
+`M2-smie--matching-block-data' runs the lexer narrowed and the answer
+near the edge of a restriction differs from the unrestricted one.")
+
+(defun M2-smie--newline-separator-p ()
+  "Return non-nil if the newline at point ends a statement.
+Point must be on the newline.  The newline separates two statements unless
+the last real token before it still expects a right operand, that is, unless
+it is one of `M2-smie--continuation-tokens'.
+
+The answer is memoized, because SMIE asks it once for every newline it
+crosses and answering it means scanning back over comments and blank lines."
+  (let ((key (list (buffer-chars-modified-tick) (point-min) (point-max)))
+        (pos (point)))
+    (unless (equal (car M2-smie--separator-cache) key)
+      (setq M2-smie--separator-cache (cons key (make-hash-table :test #'eq))))
+    (let* ((cache (cdr M2-smie--separator-cache))
+           (hit (gethash pos cache 'M2-smie--miss)))
+      (if (not (eq hit 'M2-smie--miss))
+          hit
+        (puthash pos
+                 (save-excursion
+                   ;; Step past the newline first, so that `forward-comment'
+                   ;; can treat it as the end of a -- comment on this line.
+                   (forward-char 1)
+                   (forward-comment (- (point)))
+                   (skip-chars-backward " \t")
+                   (not (member (M2-smie--backward-op-token)
+                                M2-smie--continuation-tokens)))
+                 cache)))))
+
+(defun M2-smie-forward-token ()
+  "Return the Macaulay2 token after point, moving over it.
+A newline is reported as a virtual \";\" when it separates two statements,
+and skipped otherwise.  String literals are left alone: returning an empty
+token without moving is how a SMIE lexer asks the engine to step over
+whatever is at point itself."
+  (catch 'M2-smie--token
+    (while t
+      (skip-chars-forward " \t")
+      (cond
+       ((eobp) (throw 'M2-smie--token ""))
+       ;; Stop a -- comment at the newline rather than stepping over it, so
+       ;; the newline can still be seen as a statement separator.
+       ((and (looking-at-p "--") (M2-smie--comment-start-p (point)))
+        (end-of-line))
+       ;; An unterminated -* is a state every block comment passes through
+       ;; while it is being typed, and `forward-comment' declines to move
+       ;; over one; without the fallback this loop would never end.
+       ((and (looking-at-p "-\\*") (M2-smie--comment-start-p (point)))
+        (unless (forward-comment 1) (goto-char (point-max))))
+       ((eolp)
+        (if (M2-smie--newline-separator-p)
+            (progn (forward-char 1) (throw 'M2-smie--token ";"))
+          (forward-char 1)))
+       ((M2-smie--string-delimiter-p (point))
+        (throw 'M2-smie--token ""))
+       ((looking-at M2-smie--operator-regexp)
+        (goto-char (match-end 0))
+        (throw 'M2-smie--token (match-string-no-properties 0)))
+       (t
+        (let ((beg (point)))
+          (skip-syntax-forward "w_'")
+          (when (and (= beg (point))
+                     (not (memq (char-syntax (char-after)) '(?\( ?\)))))
+            ;; Not a word, an operator, a bracket or a string.  Consume it
+            ;; anyway: an empty token means "SMIE, step over this yourself",
+            ;; and SMIE can only do that for brackets and strings --- for
+            ;; anything else it gives up with "Bumped into unknown token".
+            (forward-char 1))
+          (throw 'M2-smie--token
+                 (buffer-substring-no-properties beg (point)))))))))
+
+(defun M2-smie--backward-op-token ()
+  "Return the operator or word ending at point, moving to its start."
+  (let ((end (point)))
+    (cond
+     ;; A string delimiter, which SMIE steps over itself.  Checked before the
+     ;; operator run below, since the / of a closing /// would otherwise read
+     ;; as the division operator and make the newline after it look like a
+     ;; continuation of the statement.
+     ((and (> end (point-min)) (M2-smie--string-delimiter-p (1- end))) "")
+     ;; A word, a number, or one of the word operators.
+     ((< (skip-syntax-backward "w_'") 0)
+      (buffer-substring-no-properties (point) end))
+     ;; A run of operator characters.  Rather than try to recognize an
+     ;; operator right-to-left, re-lex the run forward with the same regexp
+     ;; `M2-smie-forward-token' uses and keep the token that reaches END.
+     ;; The two directions then agree by construction, which is what SMIE
+     ;; requires of them.  ("\\" is here because M2's syntax table gives
+     ;; backslash escape syntax, to fontify "a\"b" correctly.)
+     ((< (skip-syntax-backward ".\\") 0)
+      (let (beg tok)
+        (while (< (point) end)
+          (setq beg (point))
+          (setq tok (if (looking-at M2-smie--operator-regexp)
+                        (progn (goto-char (match-end 0))
+                               (match-string-no-properties 0))
+                      (forward-char 1)
+                      (buffer-substring-no-properties beg (point)))))
+        (goto-char beg)
+        tok))
+     ;; A bracket, which SMIE steps over itself given an empty token.
+     ((or (bobp) (memq (char-syntax (char-before)) '(?\( ?\)))) "")
+     ;; Anything else: consume one character, as the forward lexer does.
+     (t (backward-char 1)
+        (buffer-substring-no-properties (point) end)))))
+
+(defun M2-smie-backward-token ()
+  "Return the Macaulay2 token before point, moving to its start.
+The exact inverse of `M2-smie-forward-token'."
+  (catch 'M2-smie--token
+    (while t
+      ;; Horizontal whitespace only: `forward-comment' would swallow the
+      ;; newline before we get a chance to report it as a separator.
+      (skip-chars-backward " \t")
+      (cond
+       ((bobp) (throw 'M2-smie--token ""))
+       ((eq (char-before) ?\n)
+        (backward-char)
+        (if (M2-smie--newline-separator-p)
+            ;; Leave point on the newline: that is where the virtual ";" is.
+            (throw 'M2-smie--token ";")
+          ;; Not a separator.  Step back over the newline, and over any
+          ;; comment or blank lines before it, then keep looking.
+          (forward-char 1)
+          (forward-comment (- (point)))))
+       ((M2-smie--string-delimiter-p (1- (point)))
+        (throw 'M2-smie--token ""))
+       (t (throw 'M2-smie--token (M2-smie--backward-op-token)))))))
+
+(defun M2-smie--block-keyword-p (token)
+  "Return non-nil if TOKEN is one of `M2-smie--block-keywords'."
+  (and (stringp token) (member token M2-smie--block-keywords)))
+
+(defun M2-smie--bracket-indentation ()
+  "Return the column for a line inside the innermost enclosing bracket.
+Return nil at top level.  This is what `smie-rule-parent' computes when
+SMIE has identified the bracket as the parent, but it does not always:
+when a separator follows its opening bracket across a comment, SMIE loses
+track of the bracket and would otherwise line the statement up with the
+comment."
+  (let ((open (nth 1 (syntax-ppss))))
+    (when open
+      (save-excursion
+        (goto-char open)
+        (if (save-excursion (forward-char 1)
+                            (skip-chars-forward " \t")
+                            ;; A comment after the bracket still leaves it
+                            ;; hanging; without this the contents line up
+                            ;; with the comment, which is the very thing
+                            ;; this function exists to avoid.
+                            (or (eolp) (M2-smie--comment-start-p (point))))
+            ;; A bracket left hanging indents its contents relative to where
+            ;; the bracket itself would go, which is not always the start of
+            ;; the line it is on: in "b) else (" the bracket belongs to the
+            ;; "if" further up.  `smie-indent-virtual' answers `noindent'
+            ;; rather than a column when it lands in a comment or a string,
+            ;; and SMIE's own rules signal when they try to do arithmetic on
+            ;; that; fall back to the bracket's own line either way.
+            (let ((virtual (condition-case nil (smie-indent-virtual)
+                             (error nil))))
+              (+ (if (numberp virtual) virtual (current-indentation))
+                 M2-indent-level))
+          ;; Otherwise the contents line up with whatever follows it.
+          (1+ (current-column)))))))
+
+(defun M2-smie-rules (kind token)
+  "Macaulay2 indentation rules for Simple Minded Indentation Engine.
+KIND is a keyword such as `:before', `:after', or `:elem', and TOKEN
+is the token string at the relevant position."
+  (pcase (cons kind token)
+    ('(:elem . basic) M2-indent-level)
+    ('(:elem . args)  M2-indent-level)
+    ;; A bracket left hanging at the end of a line indents its contents
+    ;; relative to the line that opens it, not to its own column.
+    (`(:before . ,(or "(" "[" "{" "<|"))
+     (when (smie-rule-hanging-p) (smie-rule-parent)))
+    ;; The body of a block keyword.
+    (`(:after . ,(pred M2-smie--block-keyword-p)) M2-indent-level)
+    ;; A block keyword continued on a line of its own lines up with its opener.
+    (`(:before . ,(pred M2-smie--block-keyword-p))
+     (and (not (smie-rule-bolp)) (smie-rule-parent 0)))
+    ;; Statement and sequence separators: one step in from the enclosing
+    ;; bracket, or column 0 at top level.
+    (`(,(or :before :after) . ,(or ";" ","))
+     (or (and (smie-rule-parent-p "(" "[" "{" "<|")
+              ;; `smie-rule-parent' adds the offset to the parent's virtual
+              ;; indentation, and signals when that comes back `noindent'
+              ;; because the parent sits next to a comment.
+              (condition-case nil (smie-rule-parent M2-indent-level)
+                (error nil)))
+         (let ((column (M2-smie--bracket-indentation)))
+           (cond
+            ;; Inside a bracket SMIE did not report as the parent, or could
+            ;; not measure.
+            (column (cons 'column column))
+            ;; No enclosing bracket at all: a top-level statement, at column
+            ;; 0.  This has to be an absolute column rather than an offset of
+            ;; 0, which would be measured from the separator's own column ---
+            ;; and for a newline ending a commented line that is the column
+            ;; the comment ran out to.
+            ((null (nth 1 (syntax-ppss))) '(column . 0))))))))
+
+(defcustom M2-smie-blink-max-distance 3000
+  "How far SMIE may scan to find a matching block, in characters.
+`show-paren-mode' runs on an idle timer after every cursor motion, and
+SMIE's block matching walks the buffer through the lexer, so an unbounded
+search makes cursor motion visibly slow in large files."
+  :type 'integer
+  :group 'M2)
+
+(defun M2-smie--matching-block-data (orig &rest args)
+  "Bounded replacement for `smie--matching-block-data'.
+Real brackets are handed straight to ORIG, called with ARGS, since the
+syntax table matches those far more cheaply than SMIE can.  For block
+keywords SMIE is asked, but only within `M2-smie-blink-max-distance'
+characters of point."
+  (if (or (memq (char-syntax (or (char-after) ?\s)) '(?\( ?\)))
+          (memq (char-syntax (or (char-before) ?\s)) '(?\( ?\))))
+      (apply orig args)
+    (or (save-restriction
+          (narrow-to-region
+           (max (point-min) (- (point) M2-smie-blink-max-distance))
+           (min (point-max) (+ (point) M2-smie-blink-max-distance)))
+          ;; Pass `ignore' as ORIG so that a miss inside the narrowing comes
+          ;; back as nil rather than as the default matcher's answer, which
+          ;; would be computed against the restricted buffer.
+          (ignore-errors (apply #'smie--matching-block-data #'ignore args)))
+        (apply orig args))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; key bindings
@@ -101,11 +456,6 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
-
-(defcustom M2-indent-level 4
-  "Indentation increment in Macaulay2 mode."
-  :type 'integer
-  :group 'M2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-comint-mode
@@ -204,12 +554,24 @@ This relies on `comint-mode` tagging output with the `field` text property."
   (set (make-local-variable 'comment-start-skip) "-- *")
   (set (make-local-variable 'comint-input-autoexpand) nil)
   (set (make-local-variable 'transient-mark-mode) t)
+  (smie-setup M2-smie-grammar #'M2-smie-rules
+              :forward-token  #'M2-smie-forward-token
+              :backward-token #'M2-smie-backward-token)
+  ;; `smie-setup' puts its own unbounded block matcher on
+  ;; `show-paren-data-function'; swap in the bounded one.
+  (remove-function (local 'show-paren-data-function) #'smie--matching-block-data)
+  (add-function :around (local 'show-paren-data-function)
+                #'M2-smie--matching-block-data)
   (set (make-local-variable 'indent-line-function) #'M2-electric-tab)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
   (setq case-fold-search nil)
   (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t)
-  (setq-local syntax-propertize-function M2-syntax-propertize-function))
+  (setq-local syntax-propertize-function #'M2-syntax-propertize)
+  ;; A ///.../// spans lines, so an edit inside one has to re-propertize the
+  ;; whole string rather than the line that changed.
+  (add-hook 'syntax-propertize-extend-region-functions
+            #'syntax-propertize-multiline nil t))
 
 ;; menus
 
@@ -258,7 +620,13 @@ This relies on `comint-mode` tagging output with the `field` text property."
 
 ;; syntax
 
-; bug: ///A"B"C/// vs ///ABC///
+;; A ///.../// is not simply a string: what is written in one depends on the
+;; word in front of it, and `M2-syntax-propertize' treats the three cases
+;; differently.  A TEST string is Macaulay2 code and is left alone; a doc
+;; string is SimpleDoc, which quotes Macaulay2 freely, so it stays ordinary
+;; text with only its unbalanced delimiters demoted; anything else is a
+;; string.  Note that a syntax table cannot express the delimiter itself,
+;; since it is three characters long.
 
 (mapc
  (function
@@ -276,7 +644,15 @@ This relies on `comint-mode` tagging output with the `field` text property."
     (modify-syntax-entry ?>  "." syntax-table)
     (modify-syntax-entry ?'  "_" syntax-table) ; part of a symbol
     (modify-syntax-entry ?&  "." syntax-table)
-    (modify-syntax-entry ?|  "." syntax-table)))
+    (modify-syntax-entry ?|  "." syntax-table)
+    ;; These default to word or symbol constituents, but each is an operator
+    ;; in Macaulay2 and none of them can occur in an identifier.  Getting this
+    ;; right keeps the SMIE lexer, `forward-word' and `bounds-of-thing-at-point'
+    ;; from running an operator together with the identifier beside it.
+    (modify-syntax-entry ?/  "." syntax-table)
+    (modify-syntax-entry ?·  "." syntax-table)
+    (modify-syntax-entry ?⊠  "." syntax-table)
+    (modify-syntax-entry ?⧢  "." syntax-table)))
  (list M2-mode-syntax-table M2-comint-mode-syntax-table))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -684,25 +1060,155 @@ time we send new input to the M2 process."
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
-(defun M2-next-line-indent-amount ()
-  "Determine how much to indent the next line."
-     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
-
-(defun M2-this-line-indent-amount ()
-     "Determine how much to indent the current line."
-     (save-excursion
-	  (beginning-of-line)
-	  (if (bobp)
-	      0
-	      (forward-line -1)
-	      ;; if the previous line is blank, then keep going
-	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
-		(forward-line -1))
-	      (M2-next-line-indent-amount))))
-
 (defun M2-in-front ()
   "Determine whether we are at the front of the line."
      (save-excursion (skip-chars-backward " \t") (bolp)))
+
+(defcustom M2-code-string-openers '("TEST")
+  "Words introducing a ///.../// string whose contents are Macaulay2 code.
+Such a string is left entirely alone, so its contents are fontified and
+indented as code."
+  :type '(repeat string)
+  :group 'M2)
+
+(defcustom M2-simple-doc-string-openers '("doc" "document" "multidoc")
+  "Words introducing a ///.../// string written in SimpleDoc.
+The contents are fontified as Macaulay2 --- SimpleDoc quotes Macaulay2
+code freely, and its prose reads better with the operators and types
+marked up --- but they are not indented, since SimpleDoc is a language of
+its own that this mode does not understand.
+
+Any delimiter left unbalanced inside such a string is demoted to
+punctuation, so that prose cannot disturb the code that follows it.
+A ///.../// with any other word in front of it is simply a string."
+  :type '(repeat string)
+  :group 'M2)
+
+(defun M2--raw-string-terminator (start limit)
+  "Return the bounds of the /// closing a raw string with its body at START.
+The value is a cons of the position of the closing /// and the position
+after it, or nil if the string is unterminated before LIMIT.
+
+Macaulay2 lets a raw string contain slashes by doubling them, so a run of
+slashes closes the string only when its length is odd and at least three:
+a run of four stands for a literal ///, and one of nine for /// followed
+by the terminator.  See the documentation of /// in Macaulay2."
+  (save-excursion
+    (goto-char start)
+    (catch 'found
+      (while (re-search-forward "/+" limit t)
+        (let ((n (- (match-end 0) (match-beginning 0))))
+          (when (and (>= n 3) (= 1 (mod n 2)))
+            (throw 'found (cons (- (match-end 0) 3) (match-end 0))))))
+      nil)))
+
+(defun M2--raw-string-opener (pos)
+  "Return the word introducing the raw string whose /// begins at POS."
+  (save-excursion
+    (goto-char pos)
+    (skip-chars-backward " \t")
+    (let ((end (point)))
+      (skip-chars-backward "A-Za-z0-9_'")
+      (buffer-substring-no-properties (point) end))))
+
+(defun M2--demote-unbalanced (beg end)
+  "Give punctuation syntax to unbalanced delimiters between BEG and END.
+A SimpleDoc string is ordinary buffer text as far as the parser is
+concerned, so an unmatched bracket or quote in its prose would otherwise
+run on and displace every expression after it.  Balanced ones are left
+alone, so that a string or a list written inside the prose still reads as
+one."
+  (let ((guard 0))
+    (catch 'done
+      (while (< (setq guard (1+ guard)) 100)
+        (let ((state (parse-partial-sexp beg end)))
+          (cond
+           ((nth 3 state)               ; a string is still open
+            (put-text-property (nth 8 state) (1+ (nth 8 state))
+                               'syntax-table (string-to-syntax ".")))
+           ((> (nth 0 state) 0)         ; brackets are still open
+            (dolist (open (nth 9 state))
+              (put-text-property open (1+ open)
+                                 'syntax-table (string-to-syntax "."))))
+           ((< (nth 0 state) 0)         ; more closers than openers
+            (save-excursion
+              (goto-char beg)
+              (let ((depth 0))
+                (while (< (point) end)
+                  (pcase (char-syntax (char-after))
+                    (?\( (setq depth (1+ depth)))
+                    (?\) (if (> depth 0)
+                             (setq depth (1- depth))
+                           (put-text-property (point) (1+ (point))
+                                              'syntax-table
+                                              (string-to-syntax ".")))))
+                  (forward-char 1)))))
+           (t (throw 'done t))))))))
+
+(defun M2-syntax-propertize (start end)
+  "Apply Macaulay2 syntax properties between START and END.
+Handles the ///.../// raw strings, which a syntax table cannot describe
+because their delimiter is three characters long.  How one is treated
+depends on the word in front of it: see `M2-code-string-openers' and
+`M2-simple-doc-string-openers'."
+  (funcall M2-syntax-propertize-function start end)
+  ;; A raw string reaching into START was propertized as a whole, so pick it
+  ;; up from its beginning rather than in the middle.
+  (let ((from (or (and (> start (point-min))
+                       (get-text-property (1- start) 'M2-raw-string))
+                  start)))
+    ;; `syntax-propertize' clears the syntax-table properties it manages, but
+    ;; not ours, and a stale one would keep reporting a string that is gone.
+    (remove-text-properties from end '(M2-raw-string nil))
+    (save-excursion
+      (goto-char from)
+      ;; A raw string may well run past END, and propertizing it takes point
+      ;; with it, so test before searching rather than handing
+      ;; `search-forward' a bound behind point.
+      (while (and (< (point) end) (search-forward "///" end t))
+        (let* ((open (match-beginning 0))
+               (body (match-end 0))
+               (state (save-excursion (syntax-ppss open))))
+          ;; A /// inside a comment or an ordinary string opens nothing.
+          (if (or (nth 3 state) (nth 4 state))
+              (goto-char body)
+            (let* ((close (M2--raw-string-terminator body (point-max)))
+                   (body-end (if close (car close) (point-max)))
+                   (finish (if close (cdr close) (point-max)))
+                   (opener (M2--raw-string-opener open)))
+              (unless (member opener M2-code-string-openers)
+                (if (member opener M2-simple-doc-string-openers)
+                    (M2--demote-unbalanced body body-end)
+                  ;; Anything else is just a string.  Fence off the outer
+                  ;; slash at each end; the syntax table has no way to spell
+                  ;; a three-character delimiter.
+                  (put-text-property open (1+ open) 'syntax-table
+                                     (string-to-syntax "|"))
+                  (when close
+                    (put-text-property (1- finish) finish 'syntax-table
+                                       (string-to-syntax "|")))))
+              ;; Remember the extent so that an edit inside it re-propertizes
+              ;; the whole string, not just the line that changed.
+              (put-text-property open finish 'M2-raw-string open)
+              (put-text-property open finish 'syntax-multiline t)
+              (goto-char finish))))))))
+
+(defun M2-inside-non-code-string-p (&optional pos)
+  "Return non-nil if POS is inside a ///.../// that does not hold code.
+That is, inside a SimpleDoc string or a plain one.  The opening delimiter
+itself does not count, so the line introducing the string is still
+indented as code."
+  (setq pos (or pos (point)))
+  (syntax-propertize (min (point-max) (1+ pos)))
+  (let ((open (get-text-property
+               ;; There is no character at point-max to carry the property,
+               ;; so look at the one before it; that is where the point sits
+               ;; while a string at the end of the buffer is being typed.
+               (if (and (= pos (point-max)) (> pos (point-min))) (1- pos) pos)
+               'M2-raw-string)))
+    (and open
+         (>= pos (+ open 3))
+         (not (member (M2--raw-string-opener open) M2-code-string-openers)))))
 
 (defun M2-blank-line ()
   "Determine whether the line is blank."
@@ -731,17 +1237,43 @@ time we send new input to the M2 process."
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
-If called by command in `M2-insert-tab-commands', and if the point is either
-to right of non-whitespace characters in the same line or if the line
-is blank, then insert `M2-indent-level' spaces.  Otherwise, indent the
-line based on the depth of the parentheses in the code."
+If called by a command in `M2-insert-tab-commands' with the point to the
+right of non-whitespace characters in the same line, insert
+`M2-indent-level' spaces.  Inside a ///.../// string that does not hold
+Macaulay2 code, follow the previous line when asked for an indentation
+explicitly and otherwise leave the line alone.  Everywhere else, use SMIE."
   (interactive)
-  (indent-to
-   (prog1 (if (and (memq this-command M2-insert-tab-commands)
-		   (or (not (M2-in-front)) (M2-blank-line)))
-	      (+ (current-column) M2-indent-level)
-	    (M2-this-line-indent-amount))
-     (delete-horizontal-space))))
+  (cond
+   ((and (memq this-command M2-insert-tab-commands)
+         (not (M2-in-front)))
+    (indent-to
+     (prog1 (+ (current-column) M2-indent-level)
+       (delete-horizontal-space))))
+   ;; `doc' strings are SimpleDoc, a language of its own that this mode does
+   ;; not understand, and the rest are raw text.  SMIE would flatten both, so
+   ;; keep out: return `noindent' for anything that reindents in bulk ---
+   ;; `indent-region' and `electric-indent-mode' both leave such a line
+   ;; untouched --- and follow the previous line when TAB is pressed.
+   ((M2-inside-non-code-string-p)
+    (cond
+     ;; An explicit TAB takes the line one step further in.  Aligning with
+     ;; the line above, as `fundamental-mode' does, reads badly in SimpleDoc,
+     ;; whose nesting is what carries the meaning.
+     ((memq this-command M2-insert-tab-commands)
+      (indent-line-to (+ (current-indentation) M2-simple-doc-indent-level)))
+     ;; A line with nothing on it at all has nothing to lose, so carry the
+     ;; previous line's indentation over to it; this is what makes RET
+     ;; continue at the right level.  A line that is blank but not empty
+     ;; keeps its whitespace, which may well be significant to SimpleDoc.
+     ((save-excursion (beginning-of-line) (eolp))
+      (indent-line-to
+       (save-excursion
+         (forward-line 0)
+         (skip-chars-backward " \t\n")
+         (current-indentation))))
+     ;; Anything else, `indent-region' most of all, leaves the line alone.
+     (t 'noindent)))
+   (t (smie-indent-line))))
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 

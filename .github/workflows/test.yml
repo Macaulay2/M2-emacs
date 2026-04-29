@@ -10,3 +10,7 @@ jobs:
       - name: Install Emacs
         run: sudo apt-get install -y emacs-nox
       - uses: leotaku/elisp-check@master
+      - name: Run ERT tests
+        run: |
+          emacs -Q --batch -L . -l test/M2-smie-tests.el \
+                -f ert-run-tests-batch-and-exit
