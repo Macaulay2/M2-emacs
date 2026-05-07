@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1997-2026 The Macaulay2 Authors
 
-;; Version: 1.25.11
+;; Version: 1.26.05
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
 ;; Package-Requires: ((emacs "24.3"))
