@@ -300,7 +300,8 @@ given to the shell to run Macaulay2 can be edited in the minibuffer.  With
 prefix argument \\[universal-argument] \\[universal-argument], set NAME, the
 tag from which the buffer name is constructed (by prepending and appending
 asterisks) can be entered in the minibuffer.  The command line will always have
-the appropriate option for the width of the current window added to it."
+the appropriate option for the width of the current window added to it.
+If optional argument NOSELECT is non-nil, do not select the Macaulay2 buffer."
   (interactive
    (list
     (cond
