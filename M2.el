@@ -5,7 +5,7 @@
 ;; Version: 1.26.05
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; Commentary:
 ;; Macaulay2 makes no attempt to wrap long output lines, so we provide
@@ -780,6 +780,89 @@ by START and END."
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Optional LaTeX Fragment Automatic Rendering Mode (Soft Dependency)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun M2--texfrag-comint ()
+  "Internal texfrag setup for `M2-comint-mode'."
+  (when (bound-and-true-p texfrag-mode)
+    (setq-local texfrag-comments-only nil)
+    (setq-local texfrag-frag-alist '(("\\$" "\\$" "$" "$")))))
+
+;; Declare soft-dependency variables and functions to silence linter warnings
+(defvar texfrag-setup-alist)
+(defvar preview-LaTeX-command-replacements)
+(defvar preview-image-type)
+(defvar preview-dvi*-image-type)
+(declare-function texfrag-mode "texfrag" (&optional arg))
+
+(defun M2--texfrag-auto-render-output (_string)
+  "Scan newly arrived comint output line-by-line.
+Compiles only lines matching the pattern `o[digits] = $ ... $'."
+  (when (and (bound-and-true-p texfrag-mode)
+             (boundp 'comint-last-output-start)
+             comint-last-output-start)
+    (let ((start comint-last-output-start)
+          (end (point-max)))
+      (save-excursion
+        (goto-char start)
+        ;; Loop through every line in the newly arrived text chunk
+        (while (re-search-forward "^[ \t]*o[0-9]+[ \t]*=[ \t]*\\$.*\\$[ \t]*$" end t)
+          (let ((line-start (match-beginning 0))
+                (line-end (match-end 0)))
+            (if (fboundp 'texfrag-region)
+                (texfrag-region line-start line-end)
+              (when (fboundp 'preview-region)
+                (preview-region line-start line-end)))))))))
+
+;;;###autoload
+(define-minor-mode M2-texfrag-auto-mode
+  "Minor mode to auto-compile and preview LaTeX fragments in Macaulay2 shells.
+
+This mode requires the `texfrag' package and the `dvipng' executable."
+  :init-value nil
+  :lighter " M2-LaTeX"
+  (if M2-texfrag-auto-mode
+      (cond
+       ;; 1. Check for the Elisp package (soft check)
+       ((not (require 'texfrag nil t))
+        (setq M2-texfrag-auto-mode nil)
+        (user-error "Package 'texfrag' is required for this feature.  Please install it via M-x package-install RET texfrag"))
+
+       ;; 2. Check for the system binary dependency
+       ((not (executable-find "dvipng"))
+        (setq M2-texfrag-auto-mode nil)
+        (user-error "Executable 'dvipng' not found on your system PATH.  Please install dvipng via your system package manager"))
+
+       (t
+        ;; 3. Apply Ghostscript 10.x / Ubuntu 25.10 fixes globally
+        (setq preview-LaTeX-command-replacements '(preview-LaTeX-disable-pdfoutput))
+        (setq preview-image-type 'dvi*)
+        (setq preview-dvi*-image-type 'png)
+
+        ;; Ensure the configuration is injected *before* starting texfrag-mode
+        (when (boundp 'texfrag-setup-alist)
+          (add-to-list 'texfrag-setup-alist (list #'M2--texfrag-comint #'M2-comint-mode)))
+
+        ;; Ensure the underlying texfrag-mode is active
+        (unless (bound-and-true-p texfrag-mode)
+          (texfrag-mode 1))
+
+        ;; Catch and render incoming process output automatically going forward
+        (add-hook 'comint-output-filter-functions #'M2--texfrag-auto-render-output nil t)
+
+        ;; Compile any fragments currently visible in the buffer
+        (if (fboundp 'texfrag-document)
+            (texfrag-document)
+          (when (fboundp 'preview-buffer)
+            (preview-buffer)))))
+
+    ;; Cleanup hooks and clear overlays when the mode is disabled
+    (remove-hook 'comint-output-filter-functions #'M2--texfrag-auto-render-output t)
+    (when (fboundp 'preview-clearout-buffer)
+      (preview-clearout-buffer))))
 
 (provide 'M2)
 
