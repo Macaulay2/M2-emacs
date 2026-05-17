@@ -293,7 +293,7 @@
       (concat command " " print-width))))
 
 ;;;###autoload
-(defun M2 (command name)
+(defun M2 (command name &optional noselect)
   "Run Macaulay2 in a buffer.
 With a prefix argument \\[universal-argument], set COMMAND, the command line
 given to the shell to run Macaulay2 can be edited in the minibuffer.  With
@@ -321,13 +321,16 @@ the appropriate option for the width of the current window added to it."
 	     (if M2-tag-history '(M2-tag-history . 1) 'M2-tag-history))))
      (t M2-current-tag))))
   (let* ((buffer-name (concat "*" name "*"))
-	(buffer (get-buffer-create buffer-name)))
-    (pop-to-buffer buffer)
+	       (buffer (get-buffer-create buffer-name)))
+    (unless noselect
+      (pop-to-buffer buffer))
     (unless (comint-check-proc buffer)
-      (let ((n (if (boundp 'text-scale-mode-amount) text-scale-mode-amount 0)))
-	(make-comint name M2-shell-exe nil "-c" (concat "echo; set -x; " command))
-	(M2-comint-mode)
-	(text-scale-set n)))
+      ;; Ensure initialization runs in the context of the target buffer
+      (with-current-buffer buffer
+	      (let ((n (if (boundp 'text-scale-mode-amount) text-scale-mode-amount 0)))
+	        (make-comint name M2-shell-exe nil "-c" (concat "echo; set -x; " command))
+	        (M2-comint-mode)
+	        (text-scale-set n))))
     buffer))
 
 (defun M2-left-hand-column ()
@@ -457,9 +460,24 @@ Gets buffer for Macaulay2 inferior process from minibuffer or history."
 Sends code between START and END to Macaulay2 inferior process in
 SEND-TO-BUFFER."
   (unless (and (get-buffer send-to-buffer) (get-buffer-process send-to-buffer))
-    (user-error
-     "Start a Macaulay2 process first with `M-x M2' or `%s'.?"
-     (key-description (where-is-internal #'M2 overriding-local-map t))))
+    (let ((name (if (string-match "\\*\\(.*\\)\\*" send-to-buffer)
+                    (match-string 1 send-to-buffer)
+                  M2-current-tag))
+          (command (M2-add-width-option (if M2-history (car M2-history) M2-command))))
+      (M2 command name t)
+      ;; Wait for the process to launch and display its initial prompt
+      (when-let ((proc (get-buffer-process send-to-buffer)))
+        (let ((timeout 2.0)
+              (patience 0.05))
+          (while (and (process-live-p proc)
+                      (> timeout 0)
+                      (not (with-current-buffer send-to-buffer
+                             (save-excursion
+                               (goto-char (point-max))
+                               (forward-line 0)
+                               (looking-at ".*i1 : *$")))))
+            (accept-process-output proc patience)
+            (setq timeout (- timeout patience)))))))
   (display-buffer send-to-buffer '(nil (inhibit-same-window . t)))
   (let ((cmd (buffer-substring start end)))
     (M2-blink-region start end)
