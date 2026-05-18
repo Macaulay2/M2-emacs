@@ -798,6 +798,15 @@ by START and END."
 (defvar preview-dvi*-image-type)
 (declare-function texfrag-mode "texfrag" (&optional arg))
 
+(defun M2--texfrag-standalone-header ()
+  "Generate a wide article LaTeX preamble for Macaulay2 matrix fragments."
+  (concat
+   "\\documentclass{article}\n"
+   "\\setlength{\\textwidth}{10000pt}\n"  ;; Infinite horizontal space so math NEVER wraps
+   "\\usepackage{amsmath,amsfonts}\n"
+   "\\usepackage[utf8]{inputenc}\n"
+   "\\usepackage[T1]{fontenc}\n"))
+
 (defun M2--texfrag-auto-render-output (_string)
   "Scan newly arrived comint output line-by-line.
 Compiles only lines matching the pattern `o[digits] = $ ... $'."
@@ -809,13 +818,30 @@ Compiles only lines matching the pattern `o[digits] = $ ... $'."
       (save-excursion
         (goto-char start)
         ;; Loop through every line in the newly arrived text chunk
-        (while (re-search-forward "^[ \t]*o[0-9]+[ \t]*=[ \t]*\\$.*\\$[ \t]*$" end t)
-          (let ((line-start (match-beginning 0))
-                (line-end (match-end 0)))
-            (if (fboundp 'texfrag-region)
-                (texfrag-region line-start line-end)
-              (when (fboundp 'preview-region)
-                (preview-region line-start line-end)))))))))
+        (while (re-search-forward "^[ \t]*o[0-9]+[ \t]*=[ \t]*\\$\\(?:.\\|\n\\)*?\\$[ \t]*$" end t)
+          (let ((match-start (match-beginning 0))
+                (match-end (match-end 0)))
+
+            ;; 1. Inject our standalone header generator directly into texfrag's unique config pipeline
+            (let ((texfrag-header-function #'M2--texfrag-standalone-header)
+
+                  ;; 2. Force preview-latex to wrap our block in display math tags ($$ ... $$)
+                  ;; inside the temporary _region_.tex generation hook step
+                  (preview-format-hooks
+                   (lambda ()
+                     (goto-char (point-min))
+                     (while (re-search-forward "\\$" nil t)
+                       (replace-match ""))
+                     (goto-char (point-min))
+                     (insert "$$")
+                     (goto-char (point-max))
+                     (insert "$$"))))
+
+              ;; 3. Let texfrag compile the region coordinates cleanly without touching live screen text
+              (if (fboundp 'texfrag-region)
+                  (texfrag-region match-start match-end)
+                (when (fboundp 'preview-region)
+                  (preview-region match-start match-end))))))))))
 
 ;;;###autoload
 (define-minor-mode M2-texfrag-auto-mode
@@ -837,10 +863,15 @@ This mode requires the `texfrag' package and the `dvipng' executable."
         (user-error "Executable 'dvipng' not found on your system PATH.  Please install dvipng via your system package manager"))
 
        (t
-        ;; 3. Apply Ghostscript 10.x / Ubuntu 25.10 fixes globally
-        (setq preview-LaTeX-command-replacements '(preview-LaTeX-disable-pdfoutput))
+        ;; 1. Use DVI-to-PNG mode natively
         (setq preview-image-type 'dvi*)
         (setq preview-dvi*-image-type 'png)
+
+        ;; 2. Disable PDF generation so we stay in DVI mode
+        (setq preview-LaTeX-command-replacements '(preview-LaTeX-disable-pdfoutput))
+
+        ;; 3. Let dvipng run natively (we don't need manual overrides anymore!)
+        (setq preview-dvipng-command "dvipng -picky -noghostscript -o %m/prev%%03d.png %d")
 
         ;; Ensure the configuration is injected *before* starting texfrag-mode
         (when (boundp 'texfrag-setup-alist)
