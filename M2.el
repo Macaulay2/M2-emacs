@@ -193,7 +193,8 @@
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
   (setq case-fold-search nil)
-  (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t))
+  (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t)
+  (setq-local syntax-propertize-function (syntax-propertize-rules ("<\\(--\\)" (1 ".")))))
 
 ;; menus
 
