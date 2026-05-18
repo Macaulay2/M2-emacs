@@ -5,7 +5,7 @@
 ;; Version: 1.26.05
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
 ;; Macaulay2 makes no attempt to wrap long output lines, so we provide
