@@ -808,8 +808,7 @@ by START and END."
    "\\usepackage[T1]{fontenc}\n"))
 
 (defun M2--texfrag-auto-render-output (_string)
-  "Scan newly arrived comint output line-by-line.
-Compiles only lines matching the pattern `o[digits] = $ ... $'."
+  "Scan newly arrived comint output line-by-line and compile LaTeX fragments."
   (when (and (bound-and-true-p texfrag-mode)
              (boundp 'comint-last-output-start)
              comint-last-output-start)
@@ -817,31 +816,19 @@ Compiles only lines matching the pattern `o[digits] = $ ... $'."
           (end (point-max)))
       (save-excursion
         (goto-char start)
-        ;; Loop through every line in the newly arrived text chunk
+        ;; Search for lines starting with `oXYZ : $' and match with the next $ at end of line
         (while (re-search-forward "^[ \t]*o[0-9]+[ \t]*=[ \t]*\\$\\(?:.\\|\n\\)*?\\$[ \t]*$" end t)
           (let ((match-start (match-beginning 0))
                 (match-end (match-end 0)))
 
-            ;; 1. Inject our standalone header generator directly into texfrag's unique config pipeline
-            (let ((texfrag-header-function #'M2--texfrag-standalone-header)
+            ;; Inject our standalone header
+            (setq texfrag-header-function #'M2--texfrag-standalone-header)
 
-                  ;; 2. Force preview-latex to wrap our block in display math tags ($$ ... $$)
-                  ;; inside the temporary _region_.tex generation hook step
-                  (preview-format-hooks
-                   (lambda ()
-                     (goto-char (point-min))
-                     (while (re-search-forward "\\$" nil t)
-                       (replace-match ""))
-                     (goto-char (point-min))
-                     (insert "$$")
-                     (goto-char (point-max))
-                     (insert "$$"))))
-
-              ;; 3. Let texfrag compile the region coordinates cleanly without touching live screen text
-              (if (fboundp 'texfrag-region)
-                  (texfrag-region match-start match-end)
-                (when (fboundp 'preview-region)
-                  (preview-region match-start match-end))))))))))
+            ;; Perform the region processing
+            (if (fboundp 'texfrag-region)
+                (texfrag-region match-start match-end)
+              (when (fboundp 'preview-region)
+                (preview-region match-start match-end)))))))))
 
 ;;;###autoload
 (define-minor-mode M2-texfrag-auto-mode
