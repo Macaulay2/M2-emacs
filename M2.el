@@ -792,10 +792,12 @@ by START and END."
     (setq-local texfrag-frag-alist '(("\\$" "\\$" "$" "$")))))
 
 ;; Declare soft-dependency variables and functions to silence linter warnings
+(defvar texfrag-header-function)
 (defvar texfrag-setup-alist)
 (defvar preview-LaTeX-command-replacements)
 (defvar preview-image-type)
 (defvar preview-dvi*-image-type)
+(defvar preview-dvipng-command)
 (declare-function texfrag-mode "texfrag" (&optional arg))
 
 (defun M2--texfrag-standalone-header ()
