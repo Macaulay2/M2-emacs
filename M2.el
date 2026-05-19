@@ -181,6 +181,20 @@
 ; font-lock-doc-face
 ; font-lock-negation-char-face
 
+(defun M2--in-output-block-p (pos)
+  "Return non-nil if POS is inside an output block.
+This relies on `comint-mode` tagging output with the `field` text property."
+  (eq (get-text-property pos 'field) 'output))
+
+(defconst M2-syntax-propertize-function
+  (syntax-propertize-rules
+   ;; Make "--" act as punctuation (not a comment) in output blocks.
+   ("--"
+    (0 (let ((pos (match-beginning 0)))
+         (when (M2--in-output-block-p pos)
+           (string-to-syntax "."))))))
+  "Syntax propertize rules for Macaulay2 modes.")
+
 (defun M2-common ()
   "Set up features common to both Macaulay2 major modes."
   (set (make-local-variable 'comment-start) "-- ")
@@ -194,7 +208,7 @@
   (setq truncate-lines t)
   (setq case-fold-search nil)
   (add-hook 'completion-at-point-functions #'M2-completion-at-point nil t)
-  (setq-local syntax-propertize-function (syntax-propertize-rules ("<\\(--\\)" (1 ".")))))
+  (setq-local syntax-propertize-function M2-syntax-propertize-function))
 
 ;; menus
 
