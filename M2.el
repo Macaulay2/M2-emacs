@@ -785,29 +785,44 @@ by START and END."
 ;; Optional LaTeX Fragment Automatic Rendering Mode (Soft Dependency)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun M2--texfrag-standalone-header ()
+  "Generate a wide article LaTeX preamble for Macaulay2 latex fragments."
+  (concat
+   "\\documentclass{article}\n"
+   "\\setlength{\\textwidth}{10000pt}\n" ; this is the only addition to the default preamble
+   "\\usepackage{amsmath,amsfonts}\n"
+   "\\usepackage[utf8]{inputenc}\n"
+   "\\usepackage[T1]{fontenc}\n"))
+
 (defun M2--texfrag-comint ()
   "Internal texfrag setup for `M2-comint-mode'."
   (when (bound-and-true-p texfrag-mode)
     (setq-local texfrag-comments-only nil)
-    (setq-local texfrag-frag-alist '(("\\$" "\\$" "$" "$")))))
+    (setq-local texfrag-frag-alist '(("\\$" "\\$" "$" "$")))
+    (setq-local texfrag-header-function #'M2--texfrag-standalone-header)))
 
-;; Declare soft-dependency variables and functions to silence linter warnings
+;; Declare soft-dependency variables and functions to silence warnings
 (defvar texfrag-header-function)
 (defvar texfrag-setup-alist)
 (defvar preview-LaTeX-command-replacements)
 (defvar preview-image-type)
 (defvar preview-dvi*-image-type)
 (defvar preview-dvipng-command)
+(defvar TeX-PDF-mode)
+(defvar TeX-master)
 (declare-function texfrag-mode "texfrag" (&optional arg))
 
-(defun M2--texfrag-standalone-header ()
-  "Generate a wide article LaTeX preamble for Macaulay2 matrix fragments."
-  (concat
-   "\\documentclass{article}\n"
-   "\\setlength{\\textwidth}{10000pt}\n"  ;; Infinite horizontal space so math NEVER wraps
-   "\\usepackage{amsmath,amsfonts}\n"
-   "\\usepackage[utf8]{inputenc}\n"
-   "\\usepackage[T1]{fontenc}\n"))
+(defmacro M2--with-texfrag-preview-settings (&rest body)
+  "Execute BODY with AUCTeX preview settings strictly bound to DVI/PNG.
+Required since `preview-region' runs in an invisible background buffer
+which does not inherit buffer-local variables."
+  `(let ((preview-image-type 'dvi*)
+         (preview-dvi*-image-type 'png)
+         (preview-LaTeX-command-replacements '(preview-LaTeX-disable-pdfoutput))
+         (preview-dvipng-command "dvipng -picky -noghostscript -o %m/prev%%03d.png %d")
+         (TeX-PDF-mode nil)
+         (TeX-master t))
+     ,@body))
 
 (defun M2--texfrag-auto-render-output (_string)
   "Scan newly arrived comint output line-by-line and compile LaTeX fragments."
@@ -822,62 +837,51 @@ by START and END."
         (while (re-search-forward "^[ \t]*o[0-9]+[ \t]*=[ \t]*\\$\\(?:.\\|\n\\)*?\\$[ \t]*$" end t)
           (let ((match-start (match-beginning 0))
                 (match-end (match-end 0)))
-
-            ;; Inject our standalone header
-            (setq texfrag-header-function #'M2--texfrag-standalone-header)
-
-            ;; Perform the region processing
-            (if (fboundp 'texfrag-region)
-                (texfrag-region match-start match-end)
-              (when (fboundp 'preview-region)
-                (preview-region match-start match-end)))))))))
+            (M2--with-texfrag-preview-settings
+             (if (fboundp 'texfrag-region)
+                 (texfrag-region match-start match-end)
+               (when (fboundp 'preview-region)
+                 (preview-region match-start match-end))))))))))
 
 ;;;###autoload
 (define-minor-mode M2-texfrag-auto-mode
   "Minor mode to auto-compile and preview LaTeX fragments in Macaulay2 shells.
 
-This mode requires the `texfrag' package and the `dvipng' executable."
+This mode requires the `texfrag' package and the `dvipng' executable.
+Note: By default, `texfrag' generates a visible `texfrag/` folder in your
+working directory for its temporary cache files. To hide this, you can
+customize `texfrag-subdir' in your Emacs configuration:
+  (setq texfrag-subdir \".texfrag/\")"
   :init-value nil
   :lighter " M2-LaTeX"
   (if M2-texfrag-auto-mode
       (cond
-       ;; 1. Check for the Elisp package (soft check)
+       ;; Check for emacs package `texfrag' and system binary `dvipng'
        ((not (require 'texfrag nil t))
         (setq M2-texfrag-auto-mode nil)
         (user-error "Package 'texfrag' is required for this feature.  Please install it via M-x package-install RET texfrag"))
-
-       ;; 2. Check for the system binary dependency
        ((not (executable-find "dvipng"))
         (setq M2-texfrag-auto-mode nil)
         (user-error "Executable 'dvipng' not found on your system PATH.  Please install dvipng via your system package manager"))
 
        (t
-        ;; 1. Use DVI-to-PNG mode natively
-        (setq preview-image-type 'dvi*)
-        (setq preview-dvi*-image-type 'png)
-
-        ;; 2. Disable PDF generation so we stay in DVI mode
-        (setq preview-LaTeX-command-replacements '(preview-LaTeX-disable-pdfoutput))
-
-        ;; 3. Let dvipng run natively (we don't need manual overrides anymore!)
-        (setq preview-dvipng-command "dvipng -picky -noghostscript -o %m/prev%%03d.png %d")
-
-        ;; Ensure the configuration is injected *before* starting texfrag-mode
+        ;; Register M2-comint-mode with texfrag
         (when (boundp 'texfrag-setup-alist)
           (add-to-list 'texfrag-setup-alist (list #'M2--texfrag-comint #'M2-comint-mode)))
 
-        ;; Ensure the underlying texfrag-mode is active
+        ;; Active texfrag-mode (if it isn't already)
         (unless (bound-and-true-p texfrag-mode)
           (texfrag-mode 1))
 
-        ;; Catch and render incoming process output automatically going forward
+        ;; Render incoming output going forward
         (add-hook 'comint-output-filter-functions #'M2--texfrag-auto-render-output nil t)
 
-        ;; Compile any fragments currently visible in the buffer
-        (if (fboundp 'texfrag-document)
-            (texfrag-document)
-          (when (fboundp 'preview-buffer)
-            (preview-buffer)))))
+        ;; Render existing output in the buffer
+        (M2--with-texfrag-preview-settings
+         (if (fboundp 'texfrag-document)
+             (texfrag-document)
+           (when (fboundp 'preview-buffer)
+             (preview-buffer))))))
 
     ;; Cleanup hooks and clear overlays when the mode is disabled
     (remove-hook 'comint-output-filter-functions #'M2--texfrag-auto-render-output t)
