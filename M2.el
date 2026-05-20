@@ -776,6 +776,11 @@ by START and END."
   (interactive)
   (setq M2-blink-region-flag (not M2-blink-region-flag)))
 
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
+
 (provide 'M2)
 
 ; Local Variables:
