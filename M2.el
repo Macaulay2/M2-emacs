@@ -35,6 +35,7 @@
 
 (require 'font-lock)
 (require 'comint)
+(require 'smie)
 (require 'thingatpt)
 (require 'M2-symbols)
 
@@ -42,6 +43,215 @@
   "Support for Macaulay2 language development."
   :group 'languages
   :prefix "M2-")
+
+(defcustom M2-indent-level 4
+  "Indentation increment in Macaulay2 mode."
+  :type 'integer
+  :group 'M2)
+
+;;; SMIE (Simple Minded Indentation Engine)
+
+(defconst M2-smie--continuation-tokens
+  ;; After these tokens a newline is NOT a statement separator
+  ;; (the expression is incomplete — a right operand is expected).
+  '("if" "try" "while" "for" "new"
+    "then" "else" "do" "list"
+    "of" "from" "in" "to" "when" "except"
+    "and" "or" "xor" "not"
+    "=" ":=" "->" "=>" "<-" ">>"
+    "+=" "-=" "*=" "/=" "//=" "%=" "**=" "++=" "..=" "<<=" ">>="
+    "+" "-" "*" "/" "%" "//" "**" "@" "@@" "@@?"
+    ".." "..<" "&" "^^" "|" "||" ":" "<<"
+    "!=" "<" "<=" "==" "===" "=!=" ">" ">=" "?" "??"
+    "<==" "==>" "<==>" "<===" "===>" "|-"
+    "," ";"
+    "(" "[" "{" "<|")
+  "Tokens after which a newline continues the current statement.")
+
+(defconst M2-smie-grammar
+  ;; Sloppy grammar: keyword block structures + brackets + separators.
+  ;; Keywords like else/except/of/from are handled as continuations
+  ;; (M2-smie--continuation-tokens) rather than paired grammar rules,
+  ;; which avoids precedence cycles in smie-prec2->grammar.
+  ;; Assignment operators are in the precs table so smie-indent-after-keyword
+  ;; recognises them and the :after rules fire correctly.
+  (smie-prec2->grammar
+   (smie-merge-prec2s
+    (smie-bnf->prec2
+     '((exp
+        ("(" exps ")")
+        ("[" exps "]")
+        ("{" exps "}")
+        ("if" exp "then" exp)
+        ("while" exp "do" exp)
+        ("while" exp "list" exp)
+        ("for" exp "do" exp)
+        ("for" exp "list" exp))
+       (exps
+        (exps ";" exps)
+        (exps "," exps)
+        (exp)))
+     '((assoc ";" ",")))
+    (smie-precs->prec2
+     '((right ":=" "->" "=>")))))
+  "Macaulay2 grammar table for Simple Minded Indentation Engine.")
+
+(defun M2-smie--newline-separator-p ()
+  "Return non-nil if the newline at point should be a statement separator.
+Point must be AT the newline (char-after = newline).  Looks at the last real
+token on the preceding line and returns nil when that token indicates an
+incomplete expression (a right operand is still expected)."
+  (save-excursion
+    ;; Move just past the \n so forward-comment can treat \n as comment-end.
+    (forward-char 1)
+    ;; Skip backward past the \n (and any trailing comment on the previous line).
+    (forward-comment (- (point)))
+    (skip-chars-backward " \t")
+    ;; Identify the last real token before the newline.
+    (let ((tok (M2-smie--backward-op-token)))
+      (not (member tok M2-smie--continuation-tokens)))))
+
+(defun M2-smie-forward-token ()
+  "Forward token function for Macaulay2 SMIE."
+  (skip-chars-forward " \t")
+  (cond
+   ;; Newline: decide whether it is a statement separator.
+   ((looking-at "\n")
+    (if (M2-smie--newline-separator-p)
+        (progn (forward-char 1) ";")
+      (progn (forward-char 1)
+             (skip-chars-forward " \t\n")
+             (forward-comment (point-max))
+             (M2-smie-forward-token))))
+   ;; Skip comments (--  and  -* *-).
+   ((looking-at comment-start-skip)
+    (forward-comment (point-max))
+    (M2-smie-forward-token))
+   ;; Triple-slash strings: ///...///
+   ((looking-at "///")
+    (goto-char (match-end 0))
+    (search-forward "///" nil t)
+    "")
+   ;; Regular strings.
+   ((looking-at "\"")
+    (forward-sexp 1)
+    "")
+   ;; Multi-character operators — longest match first.
+   ((looking-at ":=")          (goto-char (match-end 0)) ":=")
+   ((looking-at "->")          (goto-char (match-end 0)) "->")
+   ((looking-at "=>")          (goto-char (match-end 0)) "=>")
+   ((looking-at "<===")        (goto-char (match-end 0)) "<===")
+   ((looking-at "===>")        (goto-char (match-end 0)) "===>")
+   ((looking-at "<=>")         (goto-char (match-end 0)) "<=>")
+   ((looking-at "<==")         (goto-char (match-end 0)) "<==")
+   ((looking-at "==>")         (goto-char (match-end 0)) "==>")
+   ((looking-at "===")         (goto-char (match-end 0)) "===")
+   ((looking-at "=!=")         (goto-char (match-end 0)) "=!=")
+   ((looking-at "!=")          (goto-char (match-end 0)) "!=")
+   ((looking-at "<=")          (goto-char (match-end 0)) "<=")
+   ((looking-at ">=")          (goto-char (match-end 0)) ">=")
+   ((looking-at "<|")          (goto-char (match-end 0)) "<|")
+   ((looking-at "|>")          (goto-char (match-end 0)) "|>")
+   ((looking-at "|-")          (goto-char (match-end 0)) "|-")
+   ((looking-at "||")          (goto-char (match-end 0)) "||")
+   ((looking-at "@@?")         (goto-char (match-end 0)) "@@?")
+   ((looking-at "@@")          (goto-char (match-end 0)) "@@")
+   ((looking-at "//=")         (goto-char (match-end 0)) "//=")
+   ((looking-at "//")          (goto-char (match-end 0)) "//")
+   ((looking-at "\\.\\.")      (goto-char (match-end 0))
+    (if (looking-at "<") (progn (forward-char 1) "..<") ".."))
+   ((looking-at "(\\*)")       (goto-char (match-end 0)) "(*)")
+   (t (smie-default-forward-token))))
+
+(defun M2-smie--backward-op-token ()
+  "Recognize a multi-character M2 operator immediately before point.
+Moves point to the beginning of the operator and returns its string.
+Falls back to `smie-default-backward-token' for single-char tokens."
+  (cond
+   ((looking-back ":="    (- (point) 2) t) (goto-char (match-beginning 0)) ":=")
+   ((looking-back "->"    (- (point) 2) t) (goto-char (match-beginning 0)) "->")
+   ((looking-back "=>"    (- (point) 2) t) (goto-char (match-beginning 0)) "=>")
+   ((looking-back "<===" (- (point) 4) t) (goto-char (match-beginning 0)) "<===")
+   ((looking-back "===>" (- (point) 4) t) (goto-char (match-beginning 0)) "===>")
+   ((looking-back "<==>" (- (point) 4) t) (goto-char (match-beginning 0)) "<==>")
+   ((looking-back "<=="  (- (point) 3) t) (goto-char (match-beginning 0)) "<==")
+   ((looking-back "==>"  (- (point) 3) t) (goto-char (match-beginning 0)) "==>")
+   ((looking-back "==="  (- (point) 3) t) (goto-char (match-beginning 0)) "===")
+   ((looking-back "=!="  (- (point) 3) t) (goto-char (match-beginning 0)) "=!=")
+   ((looking-back "!="   (- (point) 2) t) (goto-char (match-beginning 0)) "!=")
+   ((looking-back "<="   (- (point) 2) t) (goto-char (match-beginning 0)) "<=")
+   ((looking-back ">="   (- (point) 2) t) (goto-char (match-beginning 0)) ">=")
+   ((looking-back "<|"   (- (point) 2) t) (goto-char (match-beginning 0)) "<|")
+   ((looking-back "|>"   (- (point) 2) t) (goto-char (match-beginning 0)) "|>")
+   ((looking-back "|-"   (- (point) 2) t) (goto-char (match-beginning 0)) "|-")
+   ((looking-back "||"   (- (point) 2) t) (goto-char (match-beginning 0)) "||")
+   ((looking-back "@@?"  (- (point) 3) t) (goto-char (match-beginning 0)) "@@?")
+   ((looking-back "@@"   (- (point) 2) t) (goto-char (match-beginning 0)) "@@")
+   ((looking-back "//="  (- (point) 3) t) (goto-char (match-beginning 0)) "//=")
+   ((looking-back "//"   (- (point) 2) t) (goto-char (match-beginning 0)) "//")
+   ((looking-back "\\.\\.<" (- (point) 3) t) (goto-char (match-beginning 0)) "..<")
+   ((looking-back "\\.\\."  (- (point) 2) t) (goto-char (match-beginning 0)) "..")
+   ((looking-back "(\\*)" (- (point) 3) t) (goto-char (match-beginning 0)) "(*)")
+   (t (smie-default-backward-token))))
+
+(defun M2-smie-backward-token ()
+  "Backward token function for Macaulay2 SMIE."
+  ;; Skip horizontal whitespace ONLY — do not call forward-comment here,
+  ;; as it would swallow newlines before we can detect them as separators.
+  (skip-chars-backward " \t")
+  (cond
+   ;; At a newline: decide if it's a statement separator or a continuation.
+   ((and (> (point) (point-min))
+         (eq (char-before) ?\n))
+    ;; Step backward onto the newline (now char-after = \n).
+    (backward-char)
+    (if (M2-smie--newline-separator-p)
+        ;; Separator: leave point AT the \n and return virtual ";".
+        ";"
+      ;; Continuation: skip past the \n (and any preceding comment) to find
+      ;; the real previous token.
+      ;; Move past the \n so forward-comment can skip it as a comment-end.
+      (forward-char 1)
+      (forward-comment (- (point)))
+      (skip-chars-backward " \t")
+      ;; After skipping, we might face another newline — recurse.
+      (if (and (> (point) (point-min)) (eq (char-before) ?\n))
+          (M2-smie-backward-token)
+        (M2-smie--backward-op-token))))
+   ;; Not immediately at a newline — there's real content to the left.
+   ;; Check for multi-character operators (and fall through to default).
+   (t (M2-smie--backward-op-token))))
+
+(defun M2-smie-rules (kind token)
+  "Macaulay2 indentation rules for Simple Minded Indentation Engine.
+KIND is a keyword such as `:before', `:after', or `:elem', and TOKEN
+is the token string at the relevant position."
+  (pcase (cons kind token)
+    ;; Basic indentation step.
+    ('(:elem . basic) M2-indent-level)
+    ;; Hanging openers at end of line: set their virtual indent to the line
+    ;; start so that smie-indent-virtual gives the line-start column rather
+    ;; than the operator/bracket column.
+    (`(:before . ,(or "(" "[" "{" "->" ":=" "=>"))
+     (when (smie-rule-hanging-p) (smie-rule-parent)))
+    ;; After block-introducing keywords, indent the body.
+    (`(:after . ,(or "then" "else" "do" "list" "of" "from" "in" "to" "when"))
+     M2-indent-level)
+    ;; After assignment operators, indent continuation lines.
+    (`(:after . ,(or "=" ":=" "->" "=>"))
+     M2-indent-level)
+    ;; Infix continuation keywords on their own line: un-indent back to parent.
+    (`(:before . ,(or "then" "else" "do" "list" "of" "from" "in" "to"
+                      "when" "except"))
+     (and (not (smie-rule-bolp)) (smie-rule-parent 0)))
+    ;; Separators inside brackets: indent by M2-indent-level from the bracket.
+    ;; At top level (no enclosing bracket): return nil so SMIE keeps column 0.
+    ('(:before . ";")
+     (when (smie-rule-parent-p "(" "[" "{")
+       (smie-rule-parent M2-indent-level)))
+    ('(:before . ",")
+     (when (smie-rule-parent-p "(" "[" "{")
+       (smie-rule-parent M2-indent-level)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; key bindings
@@ -100,11 +310,6 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
-
-(defcustom M2-indent-level 4
-  "Indentation increment in Macaulay2 mode."
-  :type 'integer
-  :group 'M2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; M2-comint-mode
@@ -203,6 +408,9 @@ This relies on `comint-mode` tagging output with the `field` text property."
   (set (make-local-variable 'comment-start-skip) "-- *")
   (set (make-local-variable 'comint-input-autoexpand) nil)
   (set (make-local-variable 'transient-mark-mode) t)
+  (smie-setup M2-smie-grammar #'M2-smie-rules
+              :forward-token  #'M2-smie-forward-token
+              :backward-token #'M2-smie-backward-token)
   (set (make-local-variable 'indent-line-function) #'M2-electric-tab)
   (setq font-lock-defaults '( M2-mode-font-lock-keywords ))
   (setq truncate-lines t)
@@ -683,22 +891,6 @@ time we send new input to the M2 process."
      (and (eolp) (M2-next-line-blank) (= 0 (M2-paren-change))
 	 (newline nil t)))
 
-(defun M2-next-line-indent-amount ()
-  "Determine how much to indent the next line."
-     (+ (current-indentation) (* (M2-paren-change) M2-indent-level)))
-
-(defun M2-this-line-indent-amount ()
-     "Determine how much to indent the current line."
-     (save-excursion
-	  (beginning-of-line)
-	  (if (bobp)
-	      0
-	      (forward-line -1)
-	      ;; if the previous line is blank, then keep going
-	      (while (and (not (bobp)) (looking-at-p "[[:blank:]]*$"))
-		(forward-line -1))
-	      (M2-next-line-indent-amount))))
-
 (defun M2-in-front ()
   "Determine whether we are at the front of the line."
      (save-excursion (skip-chars-backward " \t") (bolp)))
@@ -730,17 +922,17 @@ time we send new input to the M2 process."
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
-If called by command in `M2-insert-tab-commands', and if the point is either
-to right of non-whitespace characters in the same line or if the line
-is blank, then insert `M2-indent-level' spaces.  Otherwise, indent the
-line based on the depth of the parentheses in the code."
+If called by a command in `M2-insert-tab-commands', and if the point is
+either to the right of non-whitespace characters in the same line or if
+the line is blank, insert `M2-indent-level' spaces.  Otherwise, use SMIE
+to indent the line."
   (interactive)
-  (indent-to
-   (prog1 (if (and (memq this-command M2-insert-tab-commands)
-		   (or (not (M2-in-front)) (M2-blank-line)))
-	      (+ (current-column) M2-indent-level)
-	    (M2-this-line-indent-amount))
-     (delete-horizontal-space))))
+  (if (and (memq this-command M2-insert-tab-commands)
+           (or (not (M2-in-front)) (M2-blank-line)))
+      (indent-to
+       (prog1 (+ (current-column) M2-indent-level)
+         (delete-horizontal-space)))
+    (smie-indent-line)))
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
