@@ -96,7 +96,8 @@
   "Major mode for editing Macaulay2 source code.
 
 \\\{M2-mode-map}."
-  (M2-common))
+  (M2-common)
+  (setq-local indent-tabs-mode nil))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
