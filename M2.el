@@ -5,7 +5,7 @@
 ;; Version: 1.26.05
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; Commentary:
 ;; Macaulay2 makes no attempt to wrap long output lines, so we provide
@@ -780,6 +780,25 @@ by START and END."
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
+
+;; eglot support
+(defvar eglot-server-programs)
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs '(M2-mode "M2-language-server")))
+
+;; lsp-mode support
+(declare-function lsp-activate-on "lsp-mode")
+(declare-function lsp-register-client "lsp-mode")
+(declare-function lsp-stdio-connection "lsp-mode")
+(declare-function make-lsp-client "lsp-mode")
+(defvar lsp-language-id-configuration)
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(M2-mode . "M2"))
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection "M2-language-server")
+    :activation-fn (lsp-activate-on "M2")
+    :server-id 'M2)))
 
 (provide 'M2)
 
