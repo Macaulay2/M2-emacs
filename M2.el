@@ -161,6 +161,7 @@
   (setq-local compilation-error-regexp-alist M2-error-regexp-alist)
   (setq-local compilation-transform-file-match-alist
 	      M2-transform-file-match-alist)
+  (setq-local compilation-error-screen-columns nil)
   (compilation-shell-minor-mode 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
