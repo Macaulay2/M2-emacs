@@ -526,7 +526,11 @@ characters of point."
    (cons M2-symbols-keyword-regexp  'font-lock-keyword-face)
    (cons M2-symbols-type-regexp     'font-lock-type-face)
    (cons M2-symbols-function-regexp 'font-lock-function-name-face)
-   (cons M2-symbols-constant-regexp 'font-lock-constant-face)))
+   (cons M2-symbols-constant-regexp 'font-lock-constant-face)
+   ;; The prose of a doc string is not Macaulay2, and the words it is made
+   ;; of collide with the tables above.  Painted last, and over whatever
+   ;; they made of it, but never over an @...@ block.
+   (list #'M2-simple-doc-fontify-prose '(0 'font-lock-doc-face t))))
 
 ; TODO:
 ; font-lock-warning-face

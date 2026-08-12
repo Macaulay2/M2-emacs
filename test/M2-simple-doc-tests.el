@@ -905,6 +905,110 @@ doc ///
     (indent-according-to-mode)
     (should (= (current-indentation) 6))))
 
+;;; Fontification.
+
+(defun M2-simple-doc-tests--face-at (text string)
+  "Return the face on the first occurrence of STRING in TEXT."
+  (with-temp-buffer
+    (insert text)
+    (M2-mode)
+    (font-lock-ensure)
+    (goto-char (point-min))
+    (search-forward string)
+    (get-text-property (- (point) (length string)) 'face)))
+
+(ert-deftest M2-simple-doc-test-prose-is-fontified-as-documentation ()
+  "Prose is prose, though every SimpleDoc keyword is a Macaulay2 symbol too.
+Without this the headline below comes out with `Key', `Example' and
+`Text' as constants and `for' and `in' as keywords."
+  (let ((text "doc ///
+  Headline
+    a Key for the Example in the Text
+///
+"))
+    (should (eq (M2-simple-doc-tests--face-at text "a Key for the Example")
+                'font-lock-doc-face))))
+
+(ert-deftest M2-simple-doc-test-at-blocks-keep-their-markup ()
+  "The Macaulay2 in an @...@ block is left with the markup it was given."
+  (let ((text "doc ///
+  Description
+    Text
+      Use @TO Example@ to say so.
+///
+"))
+    (should (eq (M2-simple-doc-tests--face-at text "TO") 'font-lock-type-face))
+    (should (eq (M2-simple-doc-tests--face-at text "Example")
+                'font-lock-constant-face))
+    (should (eq (M2-simple-doc-tests--face-at text "Use ")
+                'font-lock-doc-face))
+    (should (eq (M2-simple-doc-tests--face-at text " to say so.")
+                'font-lock-doc-face))))
+
+(ert-deftest M2-simple-doc-test-escaped-at-sign-opens-nothing ()
+  "A \\=\\@ is a literal at sign, so the prose around it stays prose."
+  (let ((text "doc ///
+  Description
+    Text
+      write to someone\\@example.com about it
+///
+"))
+    (should (eq (M2-simple-doc-tests--face-at text "about it")
+                'font-lock-doc-face))))
+
+(ert-deftest M2-simple-doc-test-comment-marker-in-prose-is-prose ()
+  "A -- in a sentence must not comment out the rest of the line.
+The syntax table makes it a comment, and the prose rule paints over it."
+  (let ((text "doc ///
+  Description
+    Text
+      a dash -- and what follows it
+///
+"))
+    (should (eq (M2-simple-doc-tests--face-at text "and what follows it")
+                'font-lock-doc-face))))
+
+(ert-deftest M2-simple-doc-test-code-sections-keep-code-markup ()
+  "The bodies that Macaulay2 evaluates are left fontified as Macaulay2."
+  (let ((text "doc ///
+  Key
+    (resolution, Module)
+  Inputs
+    n:ZZ
+      the Number of Things
+  Description
+    Example
+      R = QQ[x]
+///
+"))
+    (should (eq (M2-simple-doc-tests--face-at text "resolution")
+                'font-lock-function-name-face))
+    ;; An item's type is evaluated, so it stays code; its description does not.
+    (should (eq (M2-simple-doc-tests--face-at text "ZZ\n") 'font-lock-type-face))
+    (should (eq (M2-simple-doc-tests--face-at text "the Number of Things")
+                'font-lock-doc-face))
+    (should (eq (M2-simple-doc-tests--face-at text "QQ") 'font-lock-type-face))
+    ;; A keyword line names a section, and is the Macaulay2 symbol it names.
+    (should (eq (M2-simple-doc-tests--face-at text "Description")
+                'font-lock-constant-face))))
+
+(ert-deftest M2-simple-doc-test-other-raw-strings-are-not-simple-doc ()
+  "Only the words in `M2-simple-doc-string-openers' introduce SimpleDoc.
+A TEST string is Macaulay2 and a plain one is text; neither is touched by
+this engine."
+  (with-temp-buffer
+    (insert "TEST ///\nR = QQ[x]\n///\n")
+    (M2-mode)
+    (goto-char (point-min))
+    (forward-line 1)
+    (should-not (M2-inside-simple-doc-p (point))))
+  (with-temp-buffer
+    (insert "TEX ///\n  whatever\n///\n")
+    (M2-mode)
+    (goto-char (point-min))
+    (forward-line 1)
+    (should-not (M2-inside-simple-doc-p (point)))))
+
 (provide 'M2-simple-doc-tests)
 
 ;;; M2-simple-doc-tests.el ends here

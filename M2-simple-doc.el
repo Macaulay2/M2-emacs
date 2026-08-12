@@ -9,8 +9,8 @@
 ;;; Commentary:
 
 ;; What is written in a "doc ///.../// " string is not Macaulay2 but
-;; SimpleDoc, the language the SimpleDoc package parses.  This file parses
-;; its structure and indents it.
+;; SimpleDoc, the language the SimpleDoc package parses.  This file
+;; indents it and fontifies its prose.
 ;;
 ;; SimpleDoc follows the off-side rule: a section is opened by a line
 ;; holding a keyword and nothing else, and its body is the following, more
@@ -93,7 +93,8 @@ which is to say while the first section of a docstring is being typed."
 
 (defcustom M2-simple-doc-string-openers '("doc" "document" "multidoc")
   "Words introducing a ///.../// string written in SimpleDoc.
-Such a string is indented as SimpleDoc.  A ///.../// introduced by any
+Such a string is indented as SimpleDoc, and its prose is fontified as
+documentation rather than as Macaulay2.  A ///.../// introduced by any
 other word is either Macaulay2 code, if the word is in
 `M2-code-string-openers', or simply a string."
   :type '(repeat string)
@@ -877,6 +878,144 @@ its indentation says, and only the writer knows which was meant."
         (save-excursion (indent-line-to target))
         (when within (back-to-indentation)))
       t)))
+
+;;; Fontification.
+
+;; Every one of the 27 SimpleDoc keywords is also a Macaulay2 symbol, so
+;; the tables in `M2-mode-font-lock-keywords' mark up a docstring's prose
+;; as though it were code: a headline reading "a Key for the Example in
+;; the Text" comes out with three constants and two keywords in it, and a
+;; -- written in a sentence comments out the rest of the line.  The remedy
+;; is not to add colour but to withhold it, so this paints the prose over
+;; again as documentation, and is appended to those tables so that it has
+;; the last word.
+;;
+;; What it must not paint over is an @...@ block, whose contents really
+;; are Macaulay2 and have just been marked up correctly.
+
+(defconst M2-simple-doc--prose-sections
+  '("Text" "Caveat" "Acknowledgement" "Contributors" "References" "Item"
+    "Headline" "Heading" "Usage" "Pre" "CannedExample" "Citation"
+    "ExampleFiles")
+  "Sections whose body is prose, or text taken raw.
+`Key', `SeeAlso', `SourceCode', `BaseFunction', `Code' and `Example' are
+absent because their bodies are evaluated or run as Macaulay2, and the
+menu sections because their entries are mostly documentation keys.")
+
+(defconst M2-simple-doc--item-sections '("Inputs" "Outputs")
+  "Sections whose body is a list of items.
+The head of an item names a type, which is Macaulay2 and is left as such;
+the more deeply indented lines describing it are prose.")
+
+(defun M2-simple-doc--prose-line-p (stack)
+  "Return non-nil if the line whose enclosing frames are STACK is prose."
+  (let* ((section (M2-simple-doc--enclosing-section stack))
+         (keyword (and section (M2-simple-doc--frame-keyword section))))
+    (and keyword
+         (or (member keyword M2-simple-doc--prose-sections)
+             ;; An item's description, but not its head.
+             (and (member keyword M2-simple-doc--item-sections)
+                  (not (eq section (car stack))))))))
+
+(defun M2-simple-doc--line-spans ()
+  "Return the stretches of the line at point outside any @...@ block.
+The value is a list of conses, in order.  A backslash escapes the
+character after it, so a \\=\\@ is a literal at sign and opens nothing.
+An unmatched @ is an error in SimpleDoc; here it simply takes the rest of
+the line, so that one cannot swallow the buffer."
+  (save-excursion
+    (forward-line 0)
+    (let ((eol (line-end-position)) (spans nil) (start nil))
+      (skip-chars-forward M2-simple-doc--whitespace eol)
+      (setq start (point))
+      (while (< (point) eol)
+        (cond
+         ((eq (char-after) ?\\) (forward-char (min 2 (- eol (point)))))
+         ((eq (char-after) ?@)
+          (when (> (point) start) (push (cons start (point)) spans))
+          (forward-char 1)
+          (let ((done nil))
+            (while (and (not done) (< (point) eol))
+              (cond
+               ((eq (char-after) ?\\) (forward-char (min 2 (- eol (point)))))
+               ((eq (char-after) ?@) (forward-char 1) (setq done t))
+               (t (forward-char 1)))))
+          (setq start (point)))
+         (t (forward-char 1))))
+      (when (> eol start) (push (cons start eol) spans))
+      (nreverse spans))))
+
+(defun M2-simple-doc--prose-spans (bounds from to)
+  "Return the stretches of prose between FROM and TO.
+BOUNDS is the extent of the SimpleDoc string they lie in.
+
+Which lines are prose can only be told from the sections above them, so
+the string is read from its beginning however small the region; but the
+stretches themselves are worked out for the region alone, and the reading
+stops at its end.  Doing it for the whole string instead cost a thousand
+lines of needless work on every keystroke in a long docstring."
+  (let ((spans nil)
+        (limit (min to (M2-simple-doc--text-end (cdr bounds)))))
+    (M2-simple-doc--walk
+     (car bounds) limit
+     (lambda (_indent keyword stack)
+       ;; A keyword line names a section; it is already marked up as the
+       ;; Macaulay2 symbol it also is, which reads well enough.
+       (unless keyword
+         (when (and (>= (line-end-position) from)
+                    (M2-simple-doc--prose-line-p stack))
+           (push (M2-simple-doc--line-spans) spans)))))
+    (apply #'nconc (nreverse spans))))
+
+(defvar-local M2-simple-doc--spans-cache nil
+  "Memo for `M2-simple-doc--prose-spans'.
+A cons of a key describing one region of one docstring and the stretches
+of prose in it.  Font lock asks for these repeatedly as it works through
+a region, and answering means reading the docstring down to it.")
+
+(defun M2-simple-doc--cached-prose-spans (bounds from to)
+  "Return the stretches of prose between FROM and TO in the string BOUNDS.
+The key deliberately leaves FROM out.  Font lock works through a region
+by calling the matcher again and again with the point further along and
+the same limit, so keying on the point would miss every time and read the
+docstring afresh at every call; the stretches found for the first call
+cover the whole of that region, and serve for the rest of them."
+  (let ((key (list (car bounds) (cdr bounds) to (buffer-chars-modified-tick))))
+    (unless (equal (car M2-simple-doc--spans-cache) key)
+      (setq M2-simple-doc--spans-cache
+            (cons key (M2-simple-doc--prose-spans bounds from to))))
+    (cdr M2-simple-doc--spans-cache)))
+
+(defun M2-simple-doc--opener-regexp ()
+  "Return a regexp matching the /// that opens a SimpleDoc string."
+  (concat "\\_<" (regexp-opt M2-simple-doc-string-openers) "[ \t]*///"))
+
+(defun M2-simple-doc-fontify-prose (limit)
+  "Font-lock matcher for the prose of a SimpleDoc string.
+Set the match data to the next stretch of prose between point and LIMIT
+and move over it, or return nil when there is none.  A stretch stops at
+the end of its line and at either end of an @...@ block, so that the
+Macaulay2 expression in one keeps the markup the rest of
+`M2-mode-font-lock-keywords' gave it."
+  (let ((found nil)
+        (start (point))
+        (opener (M2-simple-doc--opener-regexp)))
+    (while (and (not found) (< (point) limit))
+      (let ((bounds (M2-inside-simple-doc-p (point))))
+        (if (null bounds)
+            (unless (re-search-forward opener limit t)
+              (goto-char limit))
+          (let* ((spans (M2-simple-doc--cached-prose-spans bounds start limit))
+                 (span (cl-find-if (lambda (s) (> (cdr s) (point))) spans)))
+            (if (and span (< (car span) limit))
+                (let ((beg (max (car span) (point)))
+                      (end (min (cdr span) limit)))
+                  (set-match-data (list beg end))
+                  (goto-char (max end (1+ (point))))
+                  (setq found t))
+              ;; Nothing more in this string: step past it.
+              (goto-char (max (1+ (point)) (min limit (cdr bounds)))))))))
+    found))
 
 (provide 'M2-simple-doc)
 
