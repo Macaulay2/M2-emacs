@@ -495,11 +495,12 @@ nested strings, so this only works while the block itself is not one."
                     (concat "doc ///\n" prose "\n///\nf = (\na;\nb)\n"))
                    '(0 0 0 0 4 4)))))
 
-(ert-deftest M2-smie-test-documentation-tab-can-indent ()
-  "TAB in a doc string steps one level further in, every time.
-Repeating the previous line's indentation instead would make TAB do
-nothing at all under a SimpleDoc key sitting at column 0, and aligning
-with that line reads badly in a language whose nesting is its meaning."
+(ert-deftest M2-smie-test-documentation-tab-computes-a-column ()
+  "TAB in a doc string computes the column, and pressing it again does nothing.
+The engine in M2-simple-doc.el reads the structure of the SimpleDoc
+around the line, so there is nothing for a second press to add.  (It used
+to step one level further in each time, which was all a mode that did not
+understand the language could offer.)"
   (with-temp-buffer
     (insert "doc ///\nKey\n\n///\n")
     (M2-mode)
@@ -507,23 +508,23 @@ with that line reads badly in a language whose nesting is its meaning."
     (forward-line 2)
     (let ((this-command 'indent-for-tab-command))
       (indent-according-to-mode))
-    ;; One step of `M2-simple-doc-indent-level' per press, cumulative.
+    ;; The body of `Key', one fallback step in from it.
     (should (= (current-indentation) M2-simple-doc-indent-level))
     (let ((this-command 'indent-for-tab-command))
       (indent-according-to-mode))
-    (should (= (current-indentation) (* 2 M2-simple-doc-indent-level))))
+    (should (= (current-indentation) M2-simple-doc-indent-level)))
   ;; The same at the very end of the buffer, where a doc string being typed
   ;; has no closing /// yet and there is no character to carry the property.
   (with-temp-buffer
     (insert "doc ///\nKey\n")
     (M2-mode)
     (goto-char (point-max))
-    (should (M2-inside-non-code-string-p (point)))
+    (should (M2-inside-simple-doc-p (point)))
     (let ((this-command 'indent-for-tab-command))
       (indent-according-to-mode))
-    (should (= (current-indentation) 2)))
-  ;; ...and where the line above does offer something to line up with, it
-  ;; lines up with that rather than jumping to a tab stop.
+    (should (= (current-indentation) M2-simple-doc-indent-level)))
+  ;; A keyword goes where its table says it goes, however far off it starts:
+  ;; `Text' is legal only inside a `Description', so it lands in this one.
   (with-temp-buffer
     (insert "doc ///\n  Description\nText\n///\n")
     (M2-mode)
@@ -531,7 +532,7 @@ with that line reads badly in a language whose nesting is its meaning."
     (forward-line 2)
     (let ((this-command 'indent-for-tab-command))
       (indent-according-to-mode))
-    (should (= (current-indentation) 2))))
+    (should (= (current-indentation) (+ 2 M2-simple-doc-indent-level)))))
 
 (ert-deftest M2-smie-test-plain-raw-string-is-a-string ()
   "A ///.../// with no recognized word in front of it is just a string."

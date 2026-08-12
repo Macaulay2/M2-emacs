@@ -50,13 +50,9 @@
   :type 'integer
   :group 'M2)
 
-(defcustom M2-simple-doc-indent-level 2
-  "Indentation increment inside a SimpleDoc string.
-SimpleDoc is customarily written in steps of two, and being a language
-of its own it is indented by TAB alone rather than computed.  See
-`M2-simple-doc-string-openers'."
-  :type 'integer
-  :group 'M2)
+;; Required after the group it adds to is defined, and before anything
+;; below uses `M2-simple-doc-string-openers'.
+(require 'M2-simple-doc)
 
 ;;; SMIE (Simple Minded Indentation Engine)
 
@@ -334,6 +330,13 @@ comment."
           ;; Otherwise the contents line up with whatever follows it.
           (1+ (current-column)))))))
 
+(defvar M2-smie--top-level-column 0
+  "The column at which a statement at the outermost level begins.
+Zero in a buffer of Macaulay2, but not in an `Example' or `Code' section
+of a SimpleDoc string, whose code is a whole block indented by the
+section around it.  `M2-simple-doc--smie-column' binds this while it runs
+the engine over such a body.")
+
 (defun M2-smie-rules (kind token)
   "Macaulay2 indentation rules for Simple Minded Indentation Engine.
 KIND is a keyword such as `:before', `:after', or `:elem', and TOKEN
@@ -364,12 +367,13 @@ is the token string at the relevant position."
             ;; Inside a bracket SMIE did not report as the parent, or could
             ;; not measure.
             (column (cons 'column column))
-            ;; No enclosing bracket at all: a top-level statement, at column
-            ;; 0.  This has to be an absolute column rather than an offset of
-            ;; 0, which would be measured from the separator's own column ---
-            ;; and for a newline ending a commented line that is the column
-            ;; the comment ran out to.
-            ((null (nth 1 (syntax-ppss))) '(column . 0))))))))
+            ;; No enclosing bracket at all: a top-level statement, at the
+            ;; outermost column.  This has to be an absolute column rather
+            ;; than an offset of 0, which would be measured from the
+            ;; separator's own column --- and for a newline ending a
+            ;; commented line that is the column the comment ran out to.
+            ((null (nth 1 (syntax-ppss)))
+             (cons 'column M2-smie--top-level-column))))))))
 
 (defcustom M2-smie-blink-max-distance 3000
   "How far SMIE may scan to find a matching block, in characters.
@@ -1071,19 +1075,6 @@ indented as code."
   :type '(repeat string)
   :group 'M2)
 
-(defcustom M2-simple-doc-string-openers '("doc" "document" "multidoc")
-  "Words introducing a ///.../// string written in SimpleDoc.
-The contents are fontified as Macaulay2 --- SimpleDoc quotes Macaulay2
-code freely, and its prose reads better with the operators and types
-marked up --- but they are not indented, since SimpleDoc is a language of
-its own that this mode does not understand.
-
-Any delimiter left unbalanced inside such a string is demoted to
-punctuation, so that prose cannot disturb the code that follows it.
-A ///.../// with any other word in front of it is simply a string."
-  :type '(repeat string)
-  :group 'M2)
-
 (defun M2--raw-string-terminator (start limit)
   "Return the bounds of the /// closing a raw string with its body at START.
 The value is a cons of the position of the closing /// and the position
@@ -1210,6 +1201,25 @@ indented as code."
          (>= pos (+ open 3))
          (not (member (M2--raw-string-opener open) M2-code-string-openers)))))
 
+(defun M2-inside-simple-doc-p (&optional pos)
+  "Return the bounds of the SimpleDoc string containing POS, or nil.
+The value is a cons of the first position after the opening /// and the
+position of the closing ///, or of `point-max' while the string is still
+unterminated.
+
+Unlike `M2-inside-non-code-string-p' this is true only of the strings
+introduced by a word in `M2-simple-doc-string-openers'.  A plain
+///.../// is raw text with no language in it, and is left alone."
+  (setq pos (or pos (point)))
+  (syntax-propertize (min (point-max) (1+ pos)))
+  (let* ((probe (if (and (= pos (point-max)) (> pos (point-min))) (1- pos) pos))
+         (open (get-text-property probe 'M2-raw-string)))
+    (when (and open
+               (>= pos (+ open 3))
+               (member (M2--raw-string-opener open) M2-simple-doc-string-openers))
+      (let ((close (M2--raw-string-terminator (+ open 3) (point-max))))
+        (cons (+ open 3) (if close (car close) (point-max)))))))
+
 (defun M2-blank-line ()
   "Determine whether the line is blank."
      (save-excursion (beginning-of-line) (skip-chars-forward " \t") (eolp)))
@@ -1237,43 +1247,61 @@ indented as code."
 
 (defun M2-electric-tab ()
   "`indent-line-function' for Macaulay2.
-If called by a command in `M2-insert-tab-commands' with the point to the
-right of non-whitespace characters in the same line, insert
-`M2-indent-level' spaces.  Inside a ///.../// string that does not hold
-Macaulay2 code, follow the previous line when asked for an indentation
-explicitly and otherwise leave the line alone.  Everywhere else, use SMIE."
+Inside a `doc' string, use the SimpleDoc engine, wherever the point may
+be in the line.  Otherwise, if called by a command in
+`M2-insert-tab-commands' with the point to the right of non-whitespace
+characters in the same line, insert `M2-indent-level' spaces.  Inside any
+other ///.../// string that does not hold Macaulay2 code, follow the
+previous line when asked for an indentation explicitly and otherwise
+leave the line alone.  Everywhere else, use SMIE."
   (interactive)
-  (cond
-   ((and (memq this-command M2-insert-tab-commands)
-         (not (M2-in-front)))
-    (indent-to
-     (prog1 (+ (current-column) M2-indent-level)
-       (delete-horizontal-space))))
-   ;; `doc' strings are SimpleDoc, a language of its own that this mode does
-   ;; not understand, and the rest are raw text.  SMIE would flatten both, so
-   ;; keep out: return `noindent' for anything that reindents in bulk ---
-   ;; `indent-region' and `electric-indent-mode' both leave such a line
-   ;; untouched --- and follow the previous line when TAB is pressed.
-   ((M2-inside-non-code-string-p)
+  (let* ((bounds (M2-inside-simple-doc-p))
+         ;; A tab was asked for by hand, at a place in the line where one
+         ;; could be inserted rather than the line indented.
+         (tab-wanted (and (memq this-command M2-insert-tab-commands)
+                          (not (M2-in-front))))
+         ;; A `doc' string is SimpleDoc, which has an engine of its own.
+         ;; It is asked first, and asked even with the point in the middle
+         ;; of the line: a line is typed from the left margin rightwards,
+         ;; so the moment one most wants TAB to indent it is the moment the
+         ;; point is at the end of what was just typed --- which is exactly
+         ;; when the tab below would instead push spaces in at the point.
+         ;; The answer is a column, or `noindent' where SimpleDoc has
+         ;; nothing to say about the line, or nil where this is not a
+         ;; SimpleDoc string at all.
+         (done (and bounds (M2-simple-doc-indent-line bounds))))
     (cond
-     ;; An explicit TAB takes the line one step further in.  Aligning with
-     ;; the line above, as `fundamental-mode' does, reads badly in SimpleDoc,
-     ;; whose nesting is what carries the meaning.
-     ((memq this-command M2-insert-tab-commands)
-      (indent-line-to (+ (current-indentation) M2-simple-doc-indent-level)))
-     ;; A line with nothing on it at all has nothing to lose, so carry the
-     ;; previous line's indentation over to it; this is what makes RET
-     ;; continue at the right level.  A line that is blank but not empty
-     ;; keeps its whitespace, which may well be significant to SimpleDoc.
-     ((save-excursion (beginning-of-line) (eolp))
-      (indent-line-to
-       (save-excursion
-         (forward-line 0)
-         (skip-chars-backward " \t\n")
-         (current-indentation))))
-     ;; Anything else, `indent-region' most of all, leaves the line alone.
-     (t 'noindent)))
-   (t (smie-indent-line))))
+     ;; Where SimpleDoc declined and a tab was asked for --- in a `Pre'
+     ;; body, whose indentation is its content --- the tab is still owed.
+     ((and done (not (and tab-wanted (eq done 'noindent)))) done)
+     (tab-wanted
+      (indent-to
+       (prog1 (+ (current-column) M2-indent-level)
+         (delete-horizontal-space))))
+     ;; Any other ///.../// is raw text.  SMIE would flatten it, so keep
+     ;; out: return `noindent' for anything that reindents in bulk ---
+     ;; `indent-region' and `electric-indent-mode' both leave such a line
+     ;; untouched --- and follow the previous line when TAB is pressed.
+     ((M2-inside-non-code-string-p)
+      (cond
+       ;; An explicit TAB takes the line one step further in.  Aligning
+       ;; with the line above, as `fundamental-mode' does, tells the writer
+       ;; of a raw string nothing they did not already have.
+       ((memq this-command M2-insert-tab-commands)
+        (indent-line-to (+ (current-indentation) M2-indent-level)))
+       ;; A line with nothing on it at all has nothing to lose, so carry
+       ;; the previous line's indentation over to it; this is what makes
+       ;; RET continue at the right level.  A line that is blank but not
+       ;; empty keeps its whitespace, which may matter to the string.
+       ((save-excursion (beginning-of-line) (eolp))
+        (indent-line-to
+         (save-excursion
+           (forward-line 0)
+           (skip-chars-backward " \t\n")
+           (current-indentation))))
+       ;; Anything else, `indent-region' most of all, leaves the line be.
+       (t 'noindent)))
+     (t (smie-indent-line)))))
 
 ;;; "blink" evaluated region (heavily inspired by ESS)
 
