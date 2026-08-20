@@ -326,11 +326,14 @@ parsing tables: =, <-, ->, =>, >> and the augmented assignments.")
 
 (defun M2-smie--bracket-indentation ()
   "Return the column for a line inside the innermost enclosing bracket.
-Return nil at top level.  This is what `smie-rule-parent' computes when
-SMIE has identified the bracket as the parent, but it does not always:
-when a separator follows its opening bracket across a comment, SMIE loses
-track of the bracket and would otherwise line the statement up with the
-comment."
+Return nil at top level.  Only the brackets `syntax-ppss' reports count,
+that is, the ones spelled with a single character.  A bracket with
+something after it on its line lines its contents up with that; a bracket
+left hanging indents them one step in from where the bracket itself would
+go.  The measurement is taken
+from the buffer rather than through SMIE's notion of the parent, which
+loses track of the bracket when a separator follows it across a comment
+and would then line the statement up with the comment."
   (let ((open (nth 1 (syntax-ppss))))
     (when open
       (save-excursion
@@ -370,10 +373,26 @@ is the token string at the relevant position."
   (pcase (cons kind token)
     ('(:elem . basic) M2-indent-level)
     ('(:elem . args)  M2-indent-level)
-    ;; A bracket left hanging at the end of a line indents its contents
-    ;; relative to the line that opens it, not to its own column.
+    ;; A bracket left hanging at the end of a line indents its contents one
+    ;; step in from the line that opens it, not from its own column.  The
+    ;; parent is measured as well and the smaller column wins, since either
+    ;; one alone can come out too far right: the line that opens the bracket
+    ;; may itself be a continuation, as in "b) else (", where the expression
+    ;; really begins at the "if" on an earlier line; and the parent may be an
+    ;; alignment column in the middle of a line, as in "apply(L, i -> (",
+    ;; where the line is where the expression really begins.  Emacs modes for
+    ;; the other languages that write a function body this way agree about
+    ;; that second case: js-mode, python-mode and julia-mode all indent the
+    ;; body one step in from the beginning of the line rather than aligning it
+    ;; with the argument list.
     (`(:before . ,(or "(" "[" "{" "<|"))
-     (when (smie-rule-hanging-p) (smie-rule-parent)))
+     (when (smie-rule-hanging-p)
+       ;; `smie-rule-parent' signals rather than returning a column when the
+       ;; parent turns out to sit next to a comment.
+       (let ((parent (condition-case nil (smie-rule-parent) (error nil))))
+         (cons 'column (if (eq (car-safe parent) 'column)
+                           (min (current-indentation) (cdr parent))
+                         (current-indentation))))))
     ;; The body of a block keyword.
     (`(:after . ,(pred M2-smie--block-keyword-p)) M2-indent-level)
     ;; A block keyword continued on a line of its own lines up with its opener.
@@ -389,27 +408,26 @@ is the token string at the relevant position."
      (and (apply #'smie-rule-parent-p M2-smie--narrow-keywords)
           (cons 'column (or (M2-smie--bracket-indentation)
                             M2-smie--top-level-column))))
-    ;; Statement and sequence separators: one step in from the enclosing
-    ;; bracket, or column 0 at top level.
+    ;; Statement and sequence separators sit where the enclosing bracket
+    ;; puts its contents, so that arguments written one to a line line up
+    ;; with the first of them in "f(x," and one step in from f in "f(".
     (`(,(or :before :after) . ,(or ";" ","))
-     (or (and (smie-rule-parent-p "(" "[" "{" "<|")
-              ;; `smie-rule-parent' adds the offset to the parent's virtual
-              ;; indentation, and signals when that comes back `noindent'
-              ;; because the parent sits next to a comment.
+     (or (and (smie-rule-parent-p "<|")
+              ;; <| is spelled with two characters, so `syntax-ppss' cannot
+              ;; report it and `M2-smie--bracket-indentation' cannot see it.
+              ;; SMIE knows it from the grammar.  `smie-rule-parent' signals
+              ;; rather than returning a column when the parent sits next to
+              ;; a comment.
               (condition-case nil (smie-rule-parent M2-indent-level)
                 (error nil)))
-         (let ((column (M2-smie--bracket-indentation)))
-           (cond
-            ;; Inside a bracket SMIE did not report as the parent, or could
-            ;; not measure.
-            (column (cons 'column column))
-            ;; No enclosing bracket at all: a top-level statement, at the
-            ;; outermost column.  This has to be an absolute column rather
-            ;; than an offset of 0, which would be measured from the
-            ;; separator's own column --- and for a newline ending a
-            ;; commented line that is the column the comment ran out to.
-            ((null (nth 1 (syntax-ppss)))
-             (cons 'column M2-smie--top-level-column))))))))
+         (cons 'column
+               (or (M2-smie--bracket-indentation)
+                   ;; No enclosing bracket at all: a top-level statement, at
+                   ;; the outermost column.  This has to be an absolute column
+                   ;; rather than an offset of 0, which would be measured from
+                   ;; the separator's own column --- and for a newline ending a
+                   ;; commented line that is the column the comment ran out to.
+                   M2-smie--top-level-column))))))
 
 (defcustom M2-smie-blink-max-distance 3000
   "How far SMIE may scan to find a matching block, in characters.

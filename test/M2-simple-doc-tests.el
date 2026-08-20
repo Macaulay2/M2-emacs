@@ -166,14 +166,14 @@ to be at the front of it."
   Description
     Example
       f(a,
-        b + c)
+             b + c)
 ///
 ")
         (want "doc ///
   Description
     Example
       f(a,
-           b + c)
+        b + c)
 ///
 "))
     (dolist (column '(0 3 12))
@@ -738,13 +738,13 @@ than its neighbours may have been meant to close the section."
   ;; A line SMIE reads as continuing an expression --- here an argument of
   ;; a call whose bracket is still open --- belongs deeper than the floor,
   ;; and goes on being part of the same example.  The column is the one
-  ;; M2-mode gives such a line anywhere else: the bracket's own, plus
-  ;; `M2-indent-level'.
+  ;; M2-mode gives such a line anywhere else: lined up with the argument
+  ;; before it.
   "doc ///
   Description
     Example
       f(a,
-           b)
+        b)
 ///
 ")
 

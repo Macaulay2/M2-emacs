@@ -132,6 +132,17 @@ new X from Z := f
 
 ;;; Brackets, separators, and operators.
 
+(M2-smie-tests--deftest M2-smie-test-argument-alignment "\
+longFunctionName(x,
+                 y)
+")
+
+(M2-smie-tests--deftest M2-smie-test-argument-list-hanging "\
+longFunctionName(
+    x,
+    y)
+")
+
 (M2-smie-tests--deftest M2-smie-test-nested-brackets "\
 L = {
     1,
@@ -152,6 +163,22 @@ foo = method(
 (M2-smie-tests--deftest M2-smie-test-hanging-arrow "\
 f = (a,b) -> (
     a+b)
+")
+
+;;; A bracket left hanging inside an argument list indents its contents from
+;;; the line that opens it, not from the argument list.
+
+(M2-smie-tests--deftest M2-smie-test-hanging-arrow-in-arguments "\
+f = new HashTable from apply(L, i -> (
+    a;
+    b))
+")
+
+(M2-smie-tests--deftest M2-smie-test-hanging-arrow-nested "\
+f = (
+    apply(L, i -> (
+        a;
+        b)))
 ")
 
 (M2-smie-tests--deftest M2-smie-test-documentation-block "\
