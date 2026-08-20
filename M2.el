@@ -298,6 +298,32 @@ The exact inverse of `M2-smie-forward-token'."
   "Return non-nil if TOKEN is one of `M2-smie--block-keywords'."
   (and (stringp token) (member token M2-smie--block-keywords)))
 
+(defconst M2-smie--narrow-keywords '("when" "of" "in" "from" "to")
+  "Block keywords that Macaulay2 binds more tightly than an assignment.
+Macaulay2's parsing tables give these the precedence they call \"narrow\",
+one level above := and friends, which is why
+
+    new X from Y := f
+
+installs a method on the whole \"new X from Y\" rather than assigning to Y.
+`M2-smie-grammar' cannot say the same, since a single precedence level per
+token cannot make \"from\" tighter than := and at the same time hold
+\"for i from 1 do ...\" together.  So \"from\" comes out as the parent of
+the :=, and `M2-smie-rules' compensates.")
+
+(defconst M2-smie--assignment-operators
+  (let (ops)
+    (dolist (row M2-operators-binary)
+      (when (member ":=" (cdr row)) (setq ops (cdr row))))
+    ops)
+  "The Macaulay2 operators that bind exactly as loosely as :=.
+This is one row of `M2-operators-binary', so it too comes from Macaulay2's
+parsing tables: =, <-, ->, =>, >> and the augmented assignments.")
+
+(defun M2-smie--assignment-p (token)
+  "Return non-nil if TOKEN is one of `M2-smie--assignment-operators'."
+  (and (stringp token) (member token M2-smie--assignment-operators)))
+
 (defun M2-smie--bracket-indentation ()
   "Return the column for a line inside the innermost enclosing bracket.
 Return nil at top level.  This is what `smie-rule-parent' computes when
@@ -353,6 +379,16 @@ is the token string at the relevant position."
     ;; A block keyword continued on a line of its own lines up with its opener.
     (`(:before . ,(pred M2-smie--block-keyword-p))
      (and (not (smie-rule-bolp)) (smie-rule-parent 0)))
+    ;; An assignment that SMIE has placed inside one of the keywords of a
+    ;; `new' expression, which Macaulay2 would not: see
+    ;; `M2-smie--narrow-keywords'.  The assignment in fact begins a
+    ;; statement, so measure it from the statement's own column rather than
+    ;; from the token after the keyword; otherwise whatever continues
+    ;; "new X from Y :=" on the next line lines up under the Y.
+    (`(:before . ,(pred M2-smie--assignment-p))
+     (and (apply #'smie-rule-parent-p M2-smie--narrow-keywords)
+          (cons 'column (or (M2-smie--bracket-indentation)
+                            M2-smie--top-level-column))))
     ;; Statement and sequence separators: one step in from the enclosing
     ;; bracket, or column 0 at top level.
     (`(,(or :before :after) . ,(or ";" ","))

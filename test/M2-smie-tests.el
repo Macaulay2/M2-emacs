@@ -109,6 +109,27 @@ f = (
     from {})
 ")
 
+;;; Installing a method on a `new' expression.  Macaulay2 binds := more
+;;; loosely than of and from, so these are method definitions and the body
+;;; belongs to the statement, not to the from.
+
+(M2-smie-tests--deftest M2-smie-test-new-from-method "\
+new X from Y := (x, y) -> (
+    a;
+    b)
+")
+
+(M2-smie-tests--deftest M2-smie-test-new-of-from-method "\
+new X of Y from Z := (x, y) -> (
+    a;
+    b)
+")
+
+(M2-smie-tests--deftest M2-smie-test-new-from-method-chain "\
+new X from Y :=
+new X from Z := f
+")
+
 ;;; Brackets, separators, and operators.
 
 (M2-smie-tests--deftest M2-smie-test-nested-brackets "\
