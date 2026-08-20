@@ -204,6 +204,18 @@ x = a +
     c
 ")
 
+;;; An operator after one of the quote words is a name, not an operator
+;;; waiting for its right operand, so the statement ends with it.
+
+(M2-smie-tests--deftest M2-smie-test-quoted-operators "\
+a = symbol <
+b = global <
+c = local <
+d = threadLocal <
+e = threadVariable <
+f = 3
+")
+
 (M2-smie-tests--deftest M2-smie-test-angle-bar-brackets "\
 x = <|
     a,

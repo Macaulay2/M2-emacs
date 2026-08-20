@@ -82,12 +82,21 @@
   (defconst M2-smie--operator-regexp (regexp-opt M2-smie--operators)
     "Regexp matching the longest Macaulay2 operator at point.")
 
+  (defconst M2-smie--quote-words
+    '("symbol" "global" "local" "threadLocal" "threadVariable")
+    "Macaulay2 words that name what follows them instead of evaluating it.
+These are the specials of Macaulay2's own binding.d --- symbol, global,
+threadLocal and local --- together with threadVariable, which exports.m2
+keeps as a synonym for threadLocal.")
+
+  (defconst M2-smie--quote-word-regexp (regexp-opt M2-smie--quote-words 'symbols)
+    "Regexp matching one of `M2-smie--quote-words'.")
+
   (defconst M2-smie--continuation-tokens
     (let ((toks (append M2-smie--block-keywords
-                        '("(" "[" "{" "<|" "and" "or" "xor" "not"
-                          ;; `quote' expressions: an identifier must follow.
-                          "symbol" "global" "local"
-                          "threadLocal" "threadVariable"))))
+                        ;; A `quote' expression: a name must follow.
+                        M2-smie--quote-words
+                        '("(" "[" "{" "<|" "and" "or" "xor" "not"))))
       (dolist (row M2-operators-binary)
         (dolist (op (cdr row)) (push op toks)))
       (delete-dups toks))
@@ -167,11 +176,21 @@ covers the accessible portion as well as the chars-modified-tick, since
 `M2-smie--matching-block-data' runs the lexer narrowed and the answer
 near the edge of a restriction differs from the unrestricted one.")
 
+(defun M2-smie--quoted-name-p ()
+  "Return non-nil if the token beginning at point is a name being quoted.
+Point must be at the beginning of the token.  What follows one of
+`M2-smie--quote-words' is a name, so an operator there is being named
+rather than applied and wants no right operand: \"foo = symbol <\" is a
+whole statement, and the line after it begins another."
+  (save-excursion
+    (skip-chars-backward " \t")
+    (looking-back M2-smie--quote-word-regexp (line-beginning-position))))
+
 (defun M2-smie--newline-separator-p ()
   "Return non-nil if the newline at point ends a statement.
 Point must be on the newline.  The newline separates two statements unless
 the last real token before it still expects a right operand, that is, unless
-it is one of `M2-smie--continuation-tokens'.
+it is one of `M2-smie--continuation-tokens' and is not a quoted name.
 
 The answer is memoized, because SMIE asks it once for every newline it
 crosses and answering it means scanning back over comments and blank lines."
@@ -190,8 +209,12 @@ crosses and answering it means scanning back over comments and blank lines."
                    (forward-char 1)
                    (forward-comment (- (point)))
                    (skip-chars-backward " \t")
-                   (not (member (M2-smie--backward-op-token)
-                                M2-smie--continuation-tokens)))
+                   ;; `M2-smie--backward-op-token' leaves the point at the
+                   ;; beginning of what it returns, which is where
+                   ;; `M2-smie--quoted-name-p' needs it.
+                   (let ((token (M2-smie--backward-op-token)))
+                     (or (not (member token M2-smie--continuation-tokens))
+                         (M2-smie--quoted-name-p))))
                  cache)))))
 
 (defun M2-smie-forward-token ()
