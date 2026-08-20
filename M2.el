@@ -379,8 +379,9 @@ and would then line the statement up with the comment."
                              (error nil))))
               (+ (if (numberp virtual) virtual (current-indentation))
                  M2-indent-level))
-          ;; Otherwise the contents line up with whatever follows it.
-          (1+ (current-column)))))))
+          (forward-char 1)
+          (skip-chars-forward " \t")
+          (current-column))))))
 
 (defvar M2-smie--top-level-column 0
   "The column at which a statement at the outermost level begins.
