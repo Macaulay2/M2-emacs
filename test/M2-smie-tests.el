@@ -110,8 +110,9 @@ f = (
 ")
 
 ;;; Installing a method on a `new' expression.  Macaulay2 binds := more
-;;; loosely than of and from, so these are method definitions and the body
-;;; belongs to the statement, not to the from.
+;;; loosely than of and from, so the body belongs to the statement rather
+;;; than to the from.  The chain is the case that turns on the rule for
+;;; `M2-smie--narrow-keywords'; the bracket rules alone carry the other two.
 
 (M2-smie-tests--deftest M2-smie-test-new-from-method "\
 new X from Y := (x, y) -> (

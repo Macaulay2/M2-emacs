@@ -89,9 +89,6 @@ These are the specials of Macaulay2's own binding.d --- symbol, global,
 threadLocal and local --- together with threadVariable, which exports.m2
 keeps as a synonym for threadLocal.")
 
-  (defconst M2-smie--quote-word-regexp (regexp-opt M2-smie--quote-words 'symbols)
-    "Regexp matching one of `M2-smie--quote-words'.")
-
   (defconst M2-smie--continuation-tokens
     (let ((toks (append M2-smie--block-keywords
                         ;; A `quote' expression: a name must follow.
@@ -176,15 +173,14 @@ covers the accessible portion as well as the chars-modified-tick, since
 `M2-smie--matching-block-data' runs the lexer narrowed and the answer
 near the edge of a restriction differs from the unrestricted one.")
 
-(defun M2-smie--quoted-name-p ()
-  "Return non-nil if the token beginning at point is a name being quoted.
-Point must be at the beginning of the token.  What follows one of
-`M2-smie--quote-words' is a name, so an operator there is being named
-rather than applied and wants no right operand: \"foo = symbol <\" is a
-whole statement, and the line after it begins another."
+(defun M2-smie--after-quote-word-p ()
+  "Return non-nil if the token before point is one of `M2-smie--quote-words'.
+What follows one of those words is a name, so an operator there is being
+named rather than applied and wants no right operand: \"foo = symbol <\"
+is a whole statement, and the line after it begins another."
   (save-excursion
     (skip-chars-backward " \t")
-    (looking-back M2-smie--quote-word-regexp (line-beginning-position))))
+    (member (M2-smie--backward-op-token) M2-smie--quote-words)))
 
 (defun M2-smie--newline-separator-p ()
   "Return non-nil if the newline at point ends a statement.
@@ -209,12 +205,11 @@ crosses and answering it means scanning back over comments and blank lines."
                    (forward-char 1)
                    (forward-comment (- (point)))
                    (skip-chars-backward " \t")
-                   ;; `M2-smie--backward-op-token' leaves the point at the
-                   ;; beginning of what it returns, which is where
-                   ;; `M2-smie--quoted-name-p' needs it.
+                   ;; The lexer leaves the point at the beginning of what it
+                   ;; returns, which is where the token before it ends.
                    (let ((token (M2-smie--backward-op-token)))
                      (or (not (member token M2-smie--continuation-tokens))
-                         (M2-smie--quoted-name-p))))
+                         (M2-smie--after-quote-word-p))))
                  cache)))))
 
 (defun M2-smie-forward-token ()
@@ -353,28 +348,27 @@ Return nil at top level.  Only the brackets `syntax-ppss' reports count,
 that is, the ones spelled with a single character.  A bracket with
 something after it on its line lines its contents up with that; a bracket
 left hanging indents them one step in from where the bracket itself would
-go.  The measurement is taken
-from the buffer rather than through SMIE's notion of the parent, which
-loses track of the bracket when a separator follows it across a comment
-and would then line the statement up with the comment."
+go.  The measurement is taken from the buffer rather than through SMIE's
+notion of the parent, which loses track of the bracket when a separator
+follows it across a comment and would then line the statement up with the
+comment."
   (let ((open (nth 1 (syntax-ppss))))
     (when open
       (save-excursion
         (goto-char open)
         (if (save-excursion (forward-char 1)
                             (skip-chars-forward " \t")
-                            ;; A comment after the bracket still leaves it
-                            ;; hanging; without this the contents line up
-                            ;; with the comment, which is the very thing
-                            ;; this function exists to avoid.
+                            ;; A comment after the bracket leaves it hanging
+                            ;; too; without this the contents line up with
+                            ;; the comment, which is the very thing this
+                            ;; function exists to avoid.
                             (or (eolp) (M2-smie--comment-start-p (point))))
-            ;; A bracket left hanging indents its contents relative to where
-            ;; the bracket itself would go, which is not always the start of
-            ;; the line it is on: in "b) else (" the bracket belongs to the
-            ;; "if" further up.  `smie-indent-virtual' answers `noindent'
-            ;; rather than a column when it lands in a comment or a string,
-            ;; and SMIE's own rules signal when they try to do arithmetic on
-            ;; that; fall back to the bracket's own line either way.
+            ;; Where the bracket itself would go is not always the start of
+            ;; the line it is on: in "b) else (" it belongs to the "if"
+            ;; further up.  `smie-indent-virtual' answers `noindent' rather
+            ;; than a column when it lands in a comment or a string, and
+            ;; SMIE's own rules signal when they do arithmetic on that; fall
+            ;; back to the bracket's own line either way.
             (let ((virtual (condition-case nil (smie-indent-virtual)
                              (error nil))))
               (+ (if (numberp virtual) virtual (current-indentation))
@@ -399,24 +393,21 @@ is the token string at the relevant position."
     ('(:elem . args)  M2-indent-level)
     ;; A bracket left hanging at the end of a line indents its contents one
     ;; step in from the line that opens it, not from its own column.  The
-    ;; parent is measured as well and the smaller column wins, since either
-    ;; one alone can come out too far right: the line that opens the bracket
-    ;; may itself be a continuation, as in "b) else (", where the expression
-    ;; really begins at the "if" on an earlier line; and the parent may be an
-    ;; alignment column in the middle of a line, as in "apply(L, i -> (",
-    ;; where the line is where the expression really begins.  Emacs modes for
-    ;; the other languages that write a function body this way agree about
-    ;; that second case: js-mode, python-mode and julia-mode all indent the
-    ;; body one step in from the beginning of the line rather than aligning it
-    ;; with the argument list.
+    ;; parent is measured as well and the smaller column wins, because what
+    ;; is wanted is the column where the statement holding the bracket
+    ;; begins, and either measurement alone can overshoot it: the line may
+    ;; itself be a continuation, as in "b) else (", where the statement began
+    ;; at the "if" on an earlier line, and the parent may be an alignment
+    ;; column in the middle of a line, as in "apply(L, i -> (", where the
+    ;; line is where the statement began.
     (`(:before . ,(or "(" "[" "{" "<|"))
      (when (smie-rule-hanging-p)
-       ;; `smie-rule-parent' signals rather than returning a column when the
-       ;; parent turns out to sit next to a comment.
-       (let ((parent (condition-case nil (smie-rule-parent) (error nil))))
-         (cons 'column (if (eq (car-safe parent) 'column)
-                           (min (current-indentation) (cdr parent))
-                         (current-indentation))))))
+       (let ((column (current-indentation)))
+         ;; `smie-rule-parent' signals rather than returning a column when
+         ;; the parent turns out to sit next to a comment.
+         (cons 'column (condition-case nil
+                           (min column (cdr (smie-rule-parent)))
+                         (error column))))))
     ;; The body of a block keyword.
     (`(:after . ,(pred M2-smie--block-keyword-p)) M2-indent-level)
     ;; A block keyword continued on a line of its own lines up with its opener.
@@ -439,9 +430,7 @@ is the token string at the relevant position."
      (or (and (smie-rule-parent-p "<|")
               ;; <| is spelled with two characters, so `syntax-ppss' cannot
               ;; report it and `M2-smie--bracket-indentation' cannot see it.
-              ;; SMIE knows it from the grammar.  `smie-rule-parent' signals
-              ;; rather than returning a column when the parent sits next to
-              ;; a comment.
+              ;; SMIE knows it from the grammar, and signals as above.
               (condition-case nil (smie-rule-parent M2-indent-level)
                 (error nil)))
          (cons 'column
