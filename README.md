@@ -35,7 +35,7 @@ versioned tarballs, so Emacs does not need Git.
 ### Installing an archive (including offline installation)
 
 Download an `M2-<version>.tar` package artifact from a successful GitHub Actions
-run, or build one from a checkout with `make package`. In Emacs, run
+run, or build one from a checkout with `make dist`. In Emacs, run
 `M-x package-install-file` and select the tar file. Once downloaded, installation
 needs neither a network connection nor a Macaulay2 installation. Do not unpack
 the archive yourself. Emacs installs it, generates autoloads, and byte-compiles it.
@@ -203,7 +203,7 @@ The package never rewrites your init file or deletes an older installation.
 
 ## Maintaining and distributing the package
 
-`make package` creates a `package-install-file` archive in `dist/`, using the
+`make dist` creates a `package-install-file` archive in `dist/`, using the
 checked-in Lisp and help files. It requires ordinary shell tools, not M2 or
 Emacs. `make check` installs the archive into a temporary Emacs package directory
 and tests that installation with no archive servers configured. CI publishes the
