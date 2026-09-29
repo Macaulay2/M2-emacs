@@ -1,4 +1,4 @@
-Maintained in https://github.com/Macaulay2/M2-emacs
+-- Auto-generated for Macaulay2-1.26.06. Do not modify this file manually. --
 
                           Running Macaulay2 in Emacs
 
@@ -11,8 +11,10 @@ horizontally to see the rest of the output.  We provide a package for "Emacs"
 that implements this. It also provides for dynamic completion of symbols in the
 language.
 
-Open this file with M-x M2-help. Installation and migration instructions are
-in README.md in the same package directory.
+There is an ASCII version of this section of the documentation distributed in
+the file share/emacs/site-lisp/macaulay2/M2-emacs-help.txt. It might be useful
+for you to visit that file with Emacs now, thereby avoiding having to cut and
+paste bits of text into Emacs buffers for the demonstrations below.
 
 If you are a newcomer to Emacs, start up Emacs with the command emacs and then
 start up the Emacs tutorial with the keystrokes "C-h t".  (The notation "C-h"
@@ -25,9 +27,20 @@ out) the Emacs manual.  It is cheap, comprehensive and informative.  Once you
 have spent an hour with the Emacs tutorial and manual, come back and continue
 from this point.
 
-Install this package with an Emacs package manager, as described in README.md.
-Opening an .m2 file then activates M2-mode. Use M2-exe to select a local executable
-or M2-command for an SSH/container command; setupEmacs() is not required.
+We assume you have taught Emacs how to find Macaulay2's files, as described in
+the previous sections, and that Emacs is loading the file M2-init.el
+successfully.  Loading that file will cause Emacs to enter a special mode for
+editing Macaulay2 code whenever a file whose name has the form *.m2 is
+encountered.  It will also provide a special mode for running Macaulay2 in an
+Emacs buffer.  It sets the variable transient-mark-mode to have a different
+value in each buffer, and sets hooks so that transient-mark-mode will be set to
+t in M2 buffers. The effect of this is that the mark is only active
+occasionally, and then Emacs functions that act on a region of text will refuse
+to proceed unless the mark is active.  The set-mark function or the
+exchange-point-and-mark function will activate the mark, and it will remain
+active until some change occurs to the buffer.  The only reason we recommend
+the use of this mode is so the same key can be used to evaluate a line or a
+region of code, depending on whether the region is active.
 
 Exit and restart Emacs with your new initialization file. If you are reading
 this file with Emacs, then use the keystrokes "C-x 2" to divide the buffer
@@ -39,7 +52,8 @@ command: press "C-u" just before.)
 If this doesn't start up Macaulay2, one reason may be that your function keys
 are not operable.  In that case press "M-x M2" instead.  (The notation "M-x" is
 Emacs notation for pressing the "x" key while holding down the "Meta" or "Alt"
-key.)  If that doesn't work, please see the installation and configuration sections in README.md.
+key.)  If that doesn't work, please see "teaching Emacs how to find M2-init.el"
+and "teaching Emacs how to find M2".
 
 You may wish to bind the Emacs function M2-send-to-program to a global
 keystroke for ease of use; this is done automatically in Macaulay2 buffers.

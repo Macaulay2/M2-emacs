@@ -217,7 +217,12 @@ repository Actions permission to write branch contents.
 external M2 and its `Style` package. Commit the resulting `M2-symbols.el` after
 review. The symbol list is a snapshot: a newer M2 may provide additional names
 until it is refreshed, without preventing editing or running a session.
-The help files are maintained here directly, not regenerated from M2 core docs.
+`M2-emacs-help.txt` and `M2-emacs.m2` are generated snapshots of the
+corresponding Macaulay2Doc help nodes. The `make-M2-emacs-help.m2` script
+regenerates them when updating from a Macaulay2 release; packaging the
+checked-in snapshots does not require M2. `M2-session-guide.txt` is maintained
+here.
+
 Keep the package's supported M2 versions and any incompatible protocol changes
 in the release notes; this initial separation does not change the comint protocol.
 
