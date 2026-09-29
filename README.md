@@ -1,7 +1,10 @@
 Emacs Package for Macaulay2
 ===========================
 
-To get started with running Macaulay2 with Emacs, run `M-x M2-help` to open the bundled `M2-emacs-help.txt`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which contains the editing guide.
+To get started with running Macaulay2 with Emacs, run `M-x M2-help` to open the
+bundled `M2-emacs-help.txt`, generated from `help "running Macaulay2 in Emacs"`.
+For editing Macaulay2 code, see `M2-emacs.m2`, generated from
+`help "editing Macaulay2 code with Emacs"`.
 
 The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
 
