@@ -42,7 +42,7 @@ the archive yourself. Emacs installs it, generates autoloads, and byte-compiles 
 
 The package declares Emacs 24.4 or newer; local standalone installation tests use Ubuntu 24.04 Emacs, and CI uses
 the version provided by ubuntu-latest. The `use-package :vc` example below
-requires Emacs 30. MELPA submission is planned; this README does not assume that
+requires Emacs 30. MELPA submission is presently not planned; this README does not assume that
 the package has been accepted into MELPA.
 
 ### Installing with Emacs package managers
