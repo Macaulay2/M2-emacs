@@ -7,7 +7,7 @@ PACKAGE_FILES = M2.el M2-mode.el M2-init.el M2-symbols.el M2-emacs-help.txt M2-e
 
 all: package
 
-package: dist/$(PACKAGE).tar
+dist: dist/$(PACKAGE).tar
 
 archive:
 	$(MAKE) VERSION=$(ARCHIVE_VERSION) package
