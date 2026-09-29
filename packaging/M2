@@ -1,0 +1,3 @@
+(M2 :fetcher github :repo "Macaulay2/M2-emacs"
+    :files ("M2.el" "M2-mode.el" "M2-init.el" "M2-symbols.el"
+            "M2-emacs-help.txt" "M2-emacs.m2" "M2-session-guide.txt"))

@@ -1,0 +1,64 @@
+using Macaulay2 with Emacs after it has been set up
+***************************************************
+
+Install the independent M2 Emacs package as described in README.md. Configure
+M2-exe or M2-command if needed and bind F12 to M2 if you want that shortcut.
+The examples below assume that you are running Emacs with this package loaded.
+
+The aspects of this interface that we describe include
+
+  * Starting Macaulay2 with the "F12" key, or with "M-x M2"
+  * Working with two buffers
+  * Sending lines or selected text to Macaulay2 using the "F11" key
+  * Command completion with "TAB"
+  * Horizontal scrolling with "F3" and "F4"
+
+Before starting, note that when we say to type "M-x M2", what we really mean is: press the "x" key while holding down the "Meta" or "Alt" key (on Macs this is either the "Option" key or the "Apple" key, depending on how your Emacs is set up); type M2; and then press the "Enter" key after that.  Similarly, "C-c" means to press the "c" key while holding down the "Ctrl" key, and "C-x 2" means to press "x" while holding down the "Ctrl" key, then to press "2"; this time do not press enter.
+
+Use the keystrokes "C-x 2" to divide the buffer containing this file into two windows. Then press the "F12" key or type "M-x M2" to start up Macaulay2 in a buffer named *M2*. (The command line used to start Macaulay2 may be edited before being run if you use a prefix argument with the above command: press "C-u" just before.)
+
+If "F12" doesn't start up Macaulay2, one reason may be that your function keys are not operable. In that case press "C-c m" instead. Another reason may be that you have not installed Macaulay2 properly — the startup script (M2 or M2.bat) should be on your path.
+
+You may use "C-x o" freely to switch from one window to the other. Verify that Macaulay2 is running by entering a command such as "2+2". Now create (using "C-x C-f") a file, named something like foo.m2 (the final .m2 is important, as it informs Emacs to use the Macaulay2 mode). Paste the following text into a buffer. If you wish, save the file using "C-x C-s".
+
+R = QQ[x,y,z]
+f = symmetricPower(2, vars R)
+M = cokernel f
+C = resolution M
+betti C
+
+Position the cursor on the first line of code, and press the "F11" function key (or "C-Enter") repeatedly to present each line to Macaulay2.  If you select several lines using the mouse, then pressing "F11" will present the entire selection to Macaulay2.  Try this on some of these lines.
+
+Here are some other useful keybindings:
+
+"C-c C-j"        -- send the current line           
+"C-c C-r"        -- send the current region         
+"C-c C-b"        -- send the entire buffer          
+"C-c C-<up>"     -- send everything before the point
+"C-c C-<down>"   -- send everything after the point 
+"C-c C-p"        -- send the current paragraph      
+
+
+Now go to the very end of the *M2* buffer with "M->" and experiment with keyword completion. Type reso and then press the "TAB" key.  Notice how the word is completed to resolution for you.  Delete the word with "M-DEL", type res and then press the "TAB" key. The possible completions are displayed in a window. Switch to it with "M-x switch-to-completions", move to the desired completion, press the "Enter" key, and then return to the *M2* buffer with "C-x o".  Alternatively, if you have a mouse, use the middle button to select the desired completion. (On the mac, hold down the option key while clicking the mouse.)
+
+
+
+Experiment with command line history in the *M2* buffer.  Position your cursor at the end of the buffer, and then use "M-p" and "M-n" to move to the previous and next line of input remembered in the history.  When you get to one you'd like to run again, simply press return to do so.  Or edit it slightly to change it before pressing return.
+
+
+
+Now let's see how we can handle wide and tall Macaulay2 output. Execute the following line of code (put it in your foo.m2 buffer, and then press "F11").
+
+printWidth = 0; random(R^20, R^{6:-2})
+
+Setting printWidth to zero removes line wrapping in the buffer, sometimes useful to view large matrices.
+
+Notice that the long lines in the Macaulay2 window, instead of being wrapped around to the next line, simply disappear off the right side of the screen, as indicated by the dollar signs or little arrows in the rightmost column.  Switch to the other window and practice scrolling up and down with "M-v" and "C-v", and scrolling left and right with the function key "F3" (or "C-x <") and the function key "F4" (or "C-x >").  In modern Emacs implementations where mouse clicking works, click on the arrow to scroll in that direction.  In these versions of Emacs, typing "C-e", or "C-a" to get at the end or beginning of the line also horizontally scrolls the text to that position.  Older Emacs tend to need a bit more: Notice how the use of "C-e" to go to the end of the line sends the cursor to the dollar sign at the right hand side of the screen; that's where the cursor will appear whenever you go to a position off the screen to the right.  Then use the "F2" function key (or "C-S-c .") to scroll the text so the cursor appears at the center of the screen.  Use "C-a" to move to the beginning of the line and then the "F2" function key (or "C-S-c .") to bring the left margin back into view.
+
+You may use "C-S-c SPC" to toggle whether long lines are truncated or wrapped; initially they are truncated.
+
+
+
+
+
+The source of this document is in Macaulay2Doc/ov_editors_emacs.m2:459:0.

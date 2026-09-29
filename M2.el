@@ -36,6 +36,7 @@
 (require 'font-lock)
 (require 'comint)
 (require 'thingatpt)
+(require 'info)
 (require 'M2-symbols)
 
 (defgroup M2 nil
@@ -288,10 +289,29 @@ This relies on `comint-mode` tagging output with the `field` text property."
   :type 'string
   :group 'M2)
 (defcustom M2-command
-  (concat M2-exe " --no-readline --print-width " (number-to-string (- (window-body-width) 1)) " ")
-  "The default Macaulay2 command line."
-  :type 'string
+  nil
+  "Shell command used to start Macaulay2, or nil to use `M2-exe'.
+Set this to a command for SSH or a container when M2 is not installed locally."
+  :type '(choice (const :tag "Use M2-exe" nil) string)
   :group 'M2)
+
+(defcustom M2-info-directory nil
+  "Directory containing Macaulay2 Info manuals, or nil for standard paths."
+  :type '(choice (const :tag "Standard Info paths" nil) directory)
+  :group 'M2)
+
+(defun M2-default-command ()
+  "Return the configured shell command without starting Macaulay2."
+  (or M2-command
+      (concat (shell-quote-argument M2-exe) " --no-readline")))
+
+;;;###autoload
+(defun M2-help ()
+  "Open the bundled introduction to running Macaulay2 in Emacs."
+  (interactive)
+  (find-file-read-only
+   (expand-file-name "M2-emacs-help.txt"
+                     (file-name-directory (locate-library "M2")))))
 
 (defvar M2-shell-exe "/bin/sh" "The default shell executable name.")
 (defvar M2-history nil "The history of recent Macaulay2 command lines.")
@@ -324,10 +344,10 @@ If optional argument NOSELECT is non-nil, do not select the Macaulay2 buffer."
      (current-prefix-arg
       (read-from-minibuffer
        "M2 command line: "
-       (M2-add-width-option (if M2-history (car M2-history) M2-command))
+       (M2-add-width-option (if M2-history (car M2-history) (M2-default-command)))
        nil nil (if M2-history '(M2-history . 1) 'M2-history)))
      (M2-history (M2-add-width-option (car M2-history)))
-     (t (M2-add-width-option M2-command)))
+     (t (M2-add-width-option (M2-default-command))))
     (cond
      ((equal current-prefix-arg '(16))
       (setq M2-current-tag
@@ -480,7 +500,7 @@ SEND-TO-BUFFER."
     (let ((name (if (string-match "\\*\\(.*\\)\\*" send-to-buffer)
                     (match-string 1 send-to-buffer)
                   M2-current-tag))
-          (command (M2-add-width-option (if M2-history (car M2-history) M2-command))))
+          (command (M2-add-width-option (if M2-history (car M2-history) (M2-default-command)))))
       (M2 command name t)
       ;; Wait for the process to launch and display its initial prompt
       (when-let ((proc (get-buffer-process send-to-buffer)))
@@ -631,7 +651,11 @@ output given by STRING matches, then load the corresponding documentation."
       (let ((end (1+ (match-end 0))))
 	(save-excursion
 	  (with-demoted-errors "%S"
-	    (info-other-window (match-string 1 string))))
+	    (let ((Info-additional-directory-list
+                   (if M2-info-directory
+                       (cons M2-info-directory Info-additional-directory-list)
+                     Info-additional-directory-list)))
+              (info-other-window (match-string 1 string)))))
 	(substring string end))
     string))
 
@@ -782,10 +806,39 @@ by START and END."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
 
+(defcustom M2-language-server-command nil
+  "Command and arguments for the Macaulay2 language server.
+When nil, prefer M2-language-server beside `M2-exe', then search
+the variable `exec-path'.
+Set an explicit list for a remote server, for example
+  (\"ssh\" \"my-server\" \"M2-language-server\").
+This is independent of `M2-command', which configures interactive sessions."
+  :type '(choice (const :tag "Find beside M2-exe or on exec-path" nil)
+                 (repeat string))
+  :group 'M2)
+
+(defun M2--language-server-command (&rest _ignored)
+  "Return the language server command for Eglot or lsp-mode."
+  (or M2-language-server-command
+      (let* ((executable (if (file-name-absolute-p M2-exe)
+                             M2-exe
+                           (executable-find M2-exe)))
+             (sibling (and executable
+                           (expand-file-name "M2-language-server"
+                                             (file-name-directory executable)))))
+        (list (if (and sibling (file-executable-p sibling))
+                  sibling
+                "M2-language-server")))))
+
 ;; eglot support
 (defvar eglot-server-programs)
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs '(M2-mode "M2-language-server")))
+;;;###autoload
+(defun M2-register-eglot ()
+  "Register Macaulay2 with Eglot.
+Call this from your configuration after loading Eglot."
+  (unless (featurep 'eglot)
+    (user-error "Load Eglot before calling M2-register-eglot"))
+  (add-to-list 'eglot-server-programs '(M2-mode . M2--language-server-command)))
 
 ;; lsp-mode support
 (declare-function lsp-activate-on "lsp-mode")
@@ -793,11 +846,16 @@ by START and END."
 (declare-function lsp-stdio-connection "lsp-mode")
 (declare-function make-lsp-client "lsp-mode")
 (defvar lsp-language-id-configuration)
-(with-eval-after-load 'lsp-mode
+;;;###autoload
+(defun M2-register-lsp ()
+  "Register Macaulay2 with lsp-mode.
+Call this from your configuration after loading lsp-mode."
+  (unless (featurep 'lsp-mode)
+    (user-error "Load lsp-mode before calling M2-register-lsp"))
   (add-to-list 'lsp-language-id-configuration '(M2-mode . "M2"))
   (lsp-register-client
    (make-lsp-client
-    :new-connection (lsp-stdio-connection "M2-language-server")
+    :new-connection (lsp-stdio-connection #'M2--language-server-command)
     :activation-fn (lsp-activate-on "M2")
     :server-id 'M2)))
 

@@ -1,0 +1,40 @@
+name: Publish Emacs package archive
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Emacs
+        run: sudo apt-get install -y emacs-nox
+      - name: Build package archive
+        run: make archive
+      - name: Publish archive branch
+        shell: bash
+        run: |
+          archive_dir="${RUNNER_TEMP}/m2-elpa"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --heads origin elpa >/dev/null; then
+            git fetch origin elpa
+            git worktree add --detach "$archive_dir" FETCH_HEAD
+          else
+            git worktree add --detach "$archive_dir" HEAD
+            git -C "$archive_dir" switch --orphan elpa
+            git -C "$archive_dir" rm -r -f .
+          fi
+          cp dist/archive-contents dist/M2-*.tar "$archive_dir/"
+          git -C "$archive_dir" add archive-contents M2-*.tar
+          if ! git -C "$archive_dir" diff --cached --quiet; then
+            git -C "$archive_dir" commit -m "Publish M2 Emacs package archive"
+            git -C "$archive_dir" push origin HEAD:elpa
+          fi

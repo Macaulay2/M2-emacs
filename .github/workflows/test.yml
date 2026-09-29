@@ -10,3 +10,23 @@ jobs:
       - name: Install Emacs
         run: sudo apt-get install -y emacs-nox
       - uses: leotaku/elisp-check@master
+      - name: Test standalone package installation without Macaulay2
+        run: make check
+      - name: Test package archive installation
+        run: make check-archive
+      - name: Test a real Macaulay2 session
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends macaulay2
+          M2_TEST_COMMAND='M2 --no-readline' make check
+      - name: Test Eglot and lsp-mode integration
+        run: |
+          sudo apt-get install -y --no-install-recommends elpa-lsp-mode
+          if command -v M2-language-server >/dev/null; then
+            export M2_LSP_TEST_COMMAND='("M2-language-server")'
+          fi
+          make check-lsp LSP_EMACS_ARGS="--eval '(setq package-directory-list (list \"/usr/share/emacs/site-lisp/elpa\"))'"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: M2-emacs-package
+          path: dist/*.tar

@@ -14,7 +14,7 @@
 ;; In particular, users can add the following to their .emacs:
 ;; (add-to-list 'load-path "/path/to/M2")
 ;; (load "M2-init")
-;; This is done automatically by the Macaulay2 method "setupEmacs()".
+;; New installations should use an Emacs package manager instead.
 
 ;; This file is NOT part of GNU Emacs.
 
