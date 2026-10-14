@@ -1,0 +1,28 @@
+name: Build package distribution
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  make-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Emacs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends emacs-nox
+      - name: Build package distribution
+        run: make archive
+      - name: Upload package distribution
+        uses: actions/upload-artifact@v7
+        with:
+          name: M2-emacs-package
+          path: |
+            dist/M2-*.tar
+            dist/archive-contents
+          if-no-files-found: error

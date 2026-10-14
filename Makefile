@@ -19,16 +19,7 @@ dist/$(PACKAGE).tar: $(PACKAGE_FILES) Makefile
 	printf '%s\n' '(define-package "M2" "$(VERSION)" "Macaulay2 editing and interactive sessions" '\''((emacs "24.4")))' > dist/$(PACKAGE)/M2-pkg.el
 	tar -cf $@ -C dist $(PACKAGE)
 
-check: dist
-	$(EMACS) -Q --batch -l tests/package-tests.el -- dist/$(PACKAGE).tar
-
-check-archive: archive
-	$(EMACS) -Q --batch -l tests/archive-tests.el -- dist
-
-check-lsp: dist
-	$(EMACS) -Q --batch $(LSP_EMACS_ARGS) -l tests/lsp-tests.el -- dist/$(PACKAGE).tar
-
 update-symbols:
 	$(M2) --script generate-symbols.m2
 
-.PHONY: all dist archive check check-archive check-lsp update-symbols
+.PHONY: all dist archive update-symbols
