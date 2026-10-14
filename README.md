@@ -161,6 +161,26 @@ A launcher outside `PATH` must itself locate the matching M2 executable; this
 is addressed by Macaulay2/M2#4453. If that fix is absent, ensure the matching M2
 bin directory is on the server process's `PATH` as well.
 
+## Testing
+
+`make check` installs the tarball in a temporary Emacs package directory and
+tests autoloads, editing, command configuration, help, Info routing, and session
+communication. Set `M2_TEST_COMMAND` to test evaluation with a real M2 as well.
+
+`make check-lsp` tests discovery and client registration. Client-specific tests
+are skipped when that client is unavailable. To run initialization and completion
+checks against a real server too, set `M2_LSP_TEST_COMMAND` to a Lisp list:
+
+```sh
+M2_LSP_TEST_COMMAND='("/path/to/M2-language-server")' make check-lsp
+```
+
+These tests use a temporary package directory. Make installed client dependencies
+visible with `LSP_EMACS_ARGS` if necessary; CI activates Ubuntu's system ELPA
+package directory. CI runs the real-server checks only when its M2 distribution
+provides `M2-language-server`.
+
+
 ## Why install M2-mode without Macaulay2?
 
 Under certain circumstances, users who are unable to install Macaulay2 locally (e.g. the version provided by the university cluster is too old) can still use this package and choose an alternative method for running the Macaulay2 executable:
