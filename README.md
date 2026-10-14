@@ -84,6 +84,38 @@ git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/Macaula
 
 Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/Macaulay2` directory.
 
+## Configuration
+
+`M-x M2` starts a session. Opening an `.m2` file selects `M2-mode` automatically.
+For a local installation outside `PATH`, customize `M2-exe`, for example:
+
+```elisp
+(setq M2-exe "/opt/Macaulay2/bin/M2")
+```
+
+When `M2-command` is nil (the default), the command is constructed from `M2-exe`
+each time a new session is started. Existing custom `M2-command` strings remain
+supported. To use a remote or container installation, set the complete shell
+command instead:
+
+```elisp
+(setq M2-command "ssh my-server M2 --no-readline")
+```
+
+`C-u M-x M2` lets you edit the command for a session. Emacs does not install M2
+itself. Use your operating system's package manager or M2's installation guide.
+For nonstandard local documentation locations, customize `M2-info-directory`:
+
+```elisp
+(setq M2-info-directory "/opt/Macaulay2/share/info")
+(setq Info-hide-note-references 'hide)
+(global-set-key (kbd "<f12>") #'M2)
+```
+
+The Info path is used when displaying documentation requested by an M2 session.
+The bundled `M-x M2-help` introduction needs no M2 installation. Remote Info paths
+are not automatically downloaded or translated into local paths.
+
 ## Why install M2-mode without Macaulay2?
 
 Under certain circumstances, users who are unable to install Macaulay2 locally (e.g. the version provided by the university cluster is too old) can still use this package and choose an alternative method for running the Macaulay2 executable:
