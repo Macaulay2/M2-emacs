@@ -1,7 +1,7 @@
 Emacs Package for Macaulay2
 ===========================
 
-To get started with running Macaulay2 with Emacs, look at the file `M2-emacs-help.txt`, which is a text version of the documentation node available via `help "running Macaulay2 in Emacs"`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which is a text version of the documentation node available via `help "editing Macaulay2 code with Emacs"`.
+To get started with running Macaulay2 with Emacs, look at the file [`M2-emacs-help.txt`](M2-emacs-help.txt), which is a text version of the documentation node available via `help "running Macaulay2 in Emacs"`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which is a text version of the documentation node available via `help "editing Macaulay2 code with Emacs"`.
 
 The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
 
@@ -30,6 +30,16 @@ Alternatively, for those who would like to install M2-mode without installing Ma
 
 2. Press `M-x package-list-packages`, then find and install M2-mode.
 -->
+
+### Installing a package tarball
+
+Run `make dist` to create `dist/M2-<version>.tar` from the checked-in Lisp and
+help files. Building the tarball requires standard shell tools; neither Emacs
+nor Macaulay2 is needed. In Emacs, run `M-x package-install-file` and select the
+tarball without unpacking it first.
+
+Maintainers can also run the **Build package distribution** workflow manually
+from the Actions tab to download the tarball as a workflow artifact.
 
 ### Installing with Emacs package managers
 
