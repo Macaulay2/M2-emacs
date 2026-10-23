@@ -782,10 +782,39 @@ by START and END."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
 
+(defcustom M2-language-server-command nil
+  "Command and arguments for the Macaulay2 language server.
+When nil, prefer M2-language-server beside `M2-exe', then search
+the variable `exec-path'.
+Set an explicit list for a remote server, for example
+  (\"ssh\" \"my-server\" \"M2-language-server\").
+This is independent of `M2-command', which configures interactive sessions."
+  :type '(choice (const :tag "Find beside M2-exe or on exec-path" nil)
+                 (repeat string))
+  :group 'M2)
+
+(defun M2--language-server-command (&rest _ignored)
+  "Return the language server command for Eglot or lsp-mode."
+  (or M2-language-server-command
+      (let* ((executable (if (file-name-absolute-p M2-exe)
+                             M2-exe
+                           (executable-find M2-exe)))
+             (sibling (and executable
+                           (expand-file-name "M2-language-server"
+                                             (file-name-directory executable)))))
+        (list (if (and sibling (file-executable-p sibling))
+                  sibling
+                "M2-language-server")))))
+
 ;; eglot support
 (defvar eglot-server-programs)
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs '(M2-mode "M2-language-server")))
+;;;###autoload
+(defun M2-register-eglot ()
+  "Register Macaulay2 with Eglot.
+Call this from your configuration after loading Eglot."
+  (unless (featurep 'eglot)
+    (user-error "Load Eglot before calling M2-register-eglot"))
+  (add-to-list 'eglot-server-programs '(M2-mode . M2--language-server-command)))
 
 ;; lsp-mode support
 (declare-function lsp-activate-on "lsp-mode")
@@ -793,11 +822,16 @@ by START and END."
 (declare-function lsp-stdio-connection "lsp-mode")
 (declare-function make-lsp-client "lsp-mode")
 (defvar lsp-language-id-configuration)
-(with-eval-after-load 'lsp-mode
+;;;###autoload
+(defun M2-register-lsp ()
+  "Register Macaulay2 with lsp-mode.
+Call this from your configuration after loading lsp-mode."
+  (unless (featurep 'lsp-mode)
+    (user-error "Load lsp-mode before calling M2-register-lsp"))
   (add-to-list 'lsp-language-id-configuration '(M2-mode . "M2"))
   (lsp-register-client
    (make-lsp-client
-    :new-connection (lsp-stdio-connection "M2-language-server")
+    :new-connection (lsp-stdio-connection #'M2--language-server-command)
     :activation-fn (lsp-activate-on "M2")
     :server-id 'M2)))
 
