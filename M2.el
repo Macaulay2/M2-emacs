@@ -36,7 +36,6 @@
 (require 'font-lock)
 (require 'comint)
 (require 'thingatpt)
-(require 'info)
 (require 'M2-symbols)
 
 (defgroup M2 nil
@@ -295,23 +294,10 @@ Set this to a command for SSH or a container when M2 is not installed locally."
   :type '(choice (const :tag "Use M2-exe" nil) string)
   :group 'M2)
 
-(defcustom M2-info-directory nil
-  "Directory containing Macaulay2 Info manuals, or nil for standard paths."
-  :type '(choice (const :tag "Standard Info paths" nil) directory)
-  :group 'M2)
-
 (defun M2-default-command ()
   "Return the configured shell command without starting Macaulay2."
   (or M2-command
       (concat (shell-quote-argument M2-exe) " --no-readline")))
-
-;;;###autoload
-(defun M2-help ()
-  "Open the bundled introduction to running Macaulay2 in Emacs."
-  (interactive)
-  (find-file-read-only
-   (expand-file-name "M2-emacs-help.txt"
-                     (file-name-directory (locate-library "M2")))))
 
 (defvar M2-shell-exe "/bin/sh" "The default shell executable name.")
 (defvar M2-history nil "The history of recent Macaulay2 command lines.")
@@ -651,11 +637,7 @@ output given by STRING matches, then load the corresponding documentation."
       (let ((end (1+ (match-end 0))))
 	(save-excursion
 	  (with-demoted-errors "%S"
-	    (let ((Info-additional-directory-list
-                   (if M2-info-directory
-                       (cons M2-info-directory Info-additional-directory-list)
-                     Info-additional-directory-list)))
-              (info-other-window (match-string 1 string)))))
+	    (info-other-window (match-string 1 string))))
 	(substring string end))
     string))
 
