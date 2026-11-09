@@ -5,6 +5,14 @@ To get started with running Macaulay2 with Emacs, look at the file [`M2-emacs-he
 
 The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
 
+After installation, `M-x M2` starts a session. Opening an `.m2` file selects
+`M2-mode` automatically, where F12 starts or switches to a session. To make F12
+available in every buffer, add this to your Emacs configuration:
+
+```elisp
+(global-set-key (kbd "<f12>") #'M2)
+```
+
 ## Installation
 
 ### Installing from a distribution package
@@ -83,6 +91,46 @@ git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/Macaula
 ```
 
 Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/Macaulay2` directory.
+
+## Configuration
+
+For a local installation outside `PATH`, customize `M2-exe`, for example:
+
+```elisp
+(setq M2-exe "/opt/Macaulay2/bin/M2")
+```
+
+When `M2-command` is nil (the default), the command is constructed from `M2-exe`
+each time a new session is started. Existing custom `M2-command` strings remain
+supported. To use a remote or container installation, set the complete shell
+command instead:
+
+```elisp
+(setq M2-command "ssh my-server M2 --no-readline")
+```
+
+`C-u M-x M2` lets you edit the command for a session. Emacs does not install M2
+itself. Use your operating system's package manager or M2's installation guide.
+
+The `infoHelp` function in M2 opens Texinfo documentation in Emacs. If the local
+manuals are outside the standard Info directories, add their directory to your
+Emacs configuration so links between package manuals also work:
+
+```elisp
+(with-eval-after-load 'info
+  (add-to-list 'Info-additional-directory-list "/opt/Macaulay2/share/info"))
+```
+
+This supplements the standard search paths in `Info-default-directory-list`.
+A remote M2 session does not automatically make its documentation available to
+local Emacs.
+
+To hide the literal `*Note` markers in cross-references, use the following setting.
+It affects all Texinfo manuals viewed in Emacs, including manuals unrelated to M2:
+
+```elisp
+(setq Info-hide-note-references 'hide)
+```
 
 ## Language-server support
 
