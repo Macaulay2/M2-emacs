@@ -24,6 +24,22 @@ If Emacs doesn't automatically find the package, you may need to start M2 in a t
 setupEmacs()
 ```
 
+### Installing from the Macaulay2 package archive
+
+Macaulay2 hosts a package archive containing the M2 package and related
+packages such as [`ob-M2`](https://github.com/d-torrance/ob-M2), which provides
+Org Babel support. Add it to your Emacs init file:
+
+```elisp
+(require 'package)
+(add-to-list 'package-archives
+             '("M2" . "https://macaulay2.com/Repositories/Emacs/") t)
+```
+
+Then run `M-x package-refresh-contents` followed by
+`M-x package-install RET M2 RET`. With use-package, `(use-package M2 :ensure t)`
+works once the archive has been added.
+
 <!--
 ### Installing from MELPA
 
