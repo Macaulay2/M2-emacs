@@ -1,4 +1,5 @@
 M2 = M2
+EMACS = emacs
 VERSION := $(shell sed -n 's/^;; Version: //p' M2.el | awk -F. '{printf "%d.%d.%d", $$1, $$2, $$3}')
 PACKAGE = M2-$(VERSION)
 PACKAGE_FILES = M2.el M2-mode.el M2-init.el M2-symbols.el M2-emacs-help.txt M2-emacs.m2 README.md LICENSE
@@ -13,7 +14,13 @@ dist/$(PACKAGE).tar: $(PACKAGE_FILES) Makefile
 	printf '%s\n' '(define-package "M2" "$(VERSION)" "Macaulay2 editing and interactive sessions" '\''((emacs "24.4")))' > dist/$(PACKAGE)/M2-pkg.el
 	tar -cf $@ -C dist $(addprefix $(PACKAGE)/,$(PACKAGE_FILES) M2-pkg.el)
 
+check: dist
+	$(EMACS) -Q --batch -l tests/package-tests.el -- dist/$(PACKAGE).tar
+
+check-lsp: dist
+	$(EMACS) -Q --batch $(LSP_EMACS_ARGS) -l tests/lsp-tests.el -- dist/$(PACKAGE).tar
+
 update-symbols:
 	$(M2) --script generate-symbols.m2
 
-.PHONY: all dist update-symbols
+.PHONY: all dist check check-lsp update-symbols
