@@ -151,6 +151,12 @@ command instead:
 `C-u M-x M2` lets you edit the command for a session. Emacs does not install M2
 itself. Use your operating system's package manager or M2's installation guide.
 
+`C-u C-u M-x M2` also asks for a name, so you can run several sessions side by
+side, for example a local `*M2*` and a remote `*M2-server*` (enter the name
+without the asterisks). Later uses of F12 go to the most recently named session,
+and the send commands accept a prefix argument to choose which session receives
+the code.
+
 The `infoHelp` function in M2 opens Texinfo documentation in Emacs. If the local
 manuals are outside the standard Info directories, add their directory to your
 Emacs configuration so links between package manuals also work:
