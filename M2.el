@@ -7,15 +7,6 @@
 ;; URL: https://github.com/Macaulay2/M2-emacs
 ;; Package-Requires: ((emacs "24.4"))
 
-;;; Commentary:
-;; Macaulay2 makes no attempt to wrap long output lines, so we provide
-;; functions that make horizontal scrolling easier.  In addition:
-;;    - run Macaulay2 as a command interpreter in an Emacs buffer
-;;    - provide a major mode used for editing Macaulay2 source files
-
-;;; TODO:
-;; Do we still wish to enable ansi-color-for-comint-mode?
-
 ;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -30,6 +21,15 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;; Macaulay2 makes no attempt to wrap long output lines, so we provide
+;; functions that make horizontal scrolling easier.  In addition:
+;;    - run Macaulay2 as a command interpreter in an Emacs buffer
+;;    - provide a major mode used for editing Macaulay2 source files
+
+;;; TODO:
+;; Do we still wish to enable ansi-color-for-comint-mode?
 
 ;;; Code:
 

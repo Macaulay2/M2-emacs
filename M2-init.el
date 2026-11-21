@@ -6,16 +6,6 @@
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
 
-;;; Commentary:
-
-;; This file is used to set up autoloads for the M2 package.  It is used as a
-;; legacy fallback if M2 was not installed using package-install or similar.
-;;
-;; In particular, users can add the following to their .emacs:
-;; (add-to-list 'load-path "/path/to/M2")
-;; (load "M2-init")
-;; This is done automatically by the Macaulay2 method "setupEmacs()".
-
 ;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -30,6 +20,16 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file is used to set up autoloads for the M2 package.  It is used as a
+;; legacy fallback if M2 was not installed using package-install or similar.
+;;
+;; In particular, users can add the following to their .emacs:
+;; (add-to-list 'load-path "/path/to/M2")
+;; (load "M2-init")
+;; This is done automatically by the Macaulay2 method "setupEmacs()".
 
 ;;; Code:
 

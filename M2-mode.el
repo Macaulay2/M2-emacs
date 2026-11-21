@@ -6,10 +6,6 @@
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
 
-;;; Commentary:
-;; This file used to contain most of M2-mode definitions, which have since moved
-;; to M2.el.  This file remains for compatibility, or for new features.
-
 ;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -24,6 +20,10 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;; This file used to contain most of M2-mode definitions, which have since moved
+;; to M2.el.  This file remains for compatibility, or for new features.
 
 (unless (fboundp 'M2)
   (load "M2"))
