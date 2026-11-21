@@ -1,4 +1,4 @@
-;;; M2-mode.el --- Major mode for editing Macaulay2 source core -*- lexical-binding: t -*-
+;;; M2-mode.el --- Compatibility entry point that loads M2.el -*- lexical-binding: t -*-
 
 ;; Copyright (C) 1997-2026 The Macaulay2 Authors
 
