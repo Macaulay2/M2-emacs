@@ -587,9 +587,14 @@ Later, `M2-get-input-from-demo-buffer' can obtain lines from this buffer."
 
 (declare-function toggle-scroll-bar "scroll-bar")
 
-(defun M2-demo ()
-  "Set up a new frame with a big font for a Macaulay2 demo."
-  (interactive)
+(defun M2-demo (buffer)
+  "Set up a new frame with a big font for a Macaulay2 demo in BUFFER.
+BUFFER is the session that `M2-send-to-program' would use.  With a
+prefix argument, its name can be entered, with history."
+  (interactive (M2--get-send-to-buffer))
+  (unless (get-buffer-process buffer)
+    (user-error "No Macaulay2 session in %s; start one with %s"
+                buffer (substitute-command-keys "\\[M2]")))
   (let* ((f (prog1
 	      (select-frame
 	       (make-frame
@@ -604,9 +609,8 @@ Later, `M2-get-input-from-demo-buffer' can obtain lines from this buffer."
 	      (toggle-scroll-bar 0)
 	      (set-frame-font (font-spec :size 24.0)))))
     (modify-frame-parameters f '((left + 20) (top + 30)))
-    ; (M2)
-    (with-current-buffer "*M2*"
-      (setq comint-scroll-show-maximum-output t))))
+    (switch-to-buffer buffer)
+    (setq comint-scroll-show-maximum-output t)))
 
 (defun M2-get-input-from-demo-buffer ()
   "Copy the current line from `M2-demo-buffer' to the prompt."
