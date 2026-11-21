@@ -146,11 +146,15 @@ For a local installation outside `PATH`, customize `M2-exe`, for example:
 
 When `M2-command` is nil (the default), the command is constructed from `M2-exe`
 each time a new session is started. Existing custom `M2-command` strings remain
-supported. To use a remote or container installation, set the complete shell
-command instead:
+supported. To use a remote or container installation, for example when
+Macaulay2 isn't installed locally or the version on a shared machine is too old,
+set the complete shell command instead. Your files stay on your local machine
+either way:
 
 ```elisp
 (setq M2-command "ssh my-server M2 --no-readline")
+;; Or:
+(setq M2-command "docker run --rm -i <image> M2 --no-readline")
 ```
 
 `C-u M-x M2` lets you edit the command for a session. Emacs does not install M2
@@ -227,19 +231,6 @@ ensure that the server can access the document paths used by the client.
 A launcher outside `PATH` must itself locate the matching M2 executable; this
 is addressed by Macaulay2/M2#4453. If that fix is absent, ensure the matching M2
 bin directory is on the server process's `PATH` as well.
-
-## Why install the M2 package without Macaulay2?
-
-Under certain circumstances, users who are unable to install Macaulay2 locally (e.g. the version provided by the university cluster is too old) can still use this package and choose an alternative method for running the Macaulay2 executable:
-
-1. Press `C-u F12` to choose how to run M2, for instance:
-  - Remotely via SSH, e.g. `ssh math.umn.edu M2 --no-readline --print-width 125`
-  - Remotely via SSH to a containerized version of Habanero!
-  - Locally via Docker, e.g. `docker run -it --entrypoint M2 mahrud/macaulay2:v1.15`
-
-2. Press `M-x M2` to start Macaulay2.
-
-Using this package, any machine running Emacs can run M2 via SSH or Docker, and your files would still be saved locally.
 
 ## Contributing
 
