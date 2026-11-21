@@ -36,6 +36,34 @@ Press `C-h m` in either mode for the full list of bindings, or use the
 Macaulay2 menu in the menu bar, and see the help files mentioned above for a
 walkthrough.
 
+## Demos
+
+Demo mode is for presenting Macaulay2 live, for example in a lecture or a talk
+with a projector. You prepare the code you want to run in a script buffer that
+the audience doesn't see. During the talk, only the Macaulay2 session is on
+screen, in a separate frame with a large font. Each press of F11 in the session
+brings the next line of the script to the prompt so the audience can read it,
+and the next press runs it. You don't have to type during the talk or switch
+windows, and the script itself stays off screen.
+
+To give a demo:
+
+1. Open the script, for example a `.m2` file, and press `M-F11` to make it the
+   demo buffer.
+2. Move point to the line where the demo should start.
+3. Start a session with F12, then press `M-F12` to open the presentation frame
+   for it. To present a different session, use `C-u M-F12`.
+4. In that frame, press F11 repeatedly to step through the script. You can
+   still type your own input at any point; F11 sends it as usual.
+5. Close the frame with `C-x 5 0` when you're done.
+
+| Key | Command | `.m2` buffers | Session buffer |
+|---|---|:---:|:---:|
+| `M-F11` | Make the current buffer the demo buffer | ✅ | ✅ |
+| F11 | On a blank input line, fetch the next line of the demo buffer; otherwise send the input | | ✅ |
+| `C-F11` | Switch to the demo buffer, for example to skip ahead or back | ✅ | ✅ |
+| `M-F12` | Open a frame with a large font for presenting | ✅ | ✅ |
+
 ## Installation
 
 ### Installing from a distribution package
