@@ -36,6 +36,8 @@
 (autoload 'M2             "M2" "Run Macaulay2 in an emacs buffer" t)
 (autoload 'M2-mode        "M2" "Macaulay2 editing mode" t)
 (autoload 'M2-comint-mode "M2" "Macaulay2 command interpreter mode" t)
+(autoload 'M2-register-eglot "M2" "Register Macaulay2 with Eglot")
+(autoload 'M2-register-lsp "M2" "Register Macaulay2 with lsp-mode")
 (add-to-list 'auto-mode-alist '("\\.m2\\'" . M2-mode))
 (add-to-list 'auto-mode-alist '("\\.dd?\\'" . M2-mode))
 

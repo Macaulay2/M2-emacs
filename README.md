@@ -149,10 +149,11 @@ For lsp-mode:
   (M2-register-lsp))
 ```
 
-The registration functions are autoloaded by the Emacs package manager. For a
-manual checkout, load `M2` before using them. These configuration forms work
-whether the client is already loaded or is loaded later. Upgrading users should
-add the appropriate form: loading `M2` no longer registers clients automatically.
+The registration functions are autoloaded by the Emacs package manager and by
+`M2-init.el`, which `setupEmacs()` configures Emacs to load. For a manual
+checkout, load `M2` before using them. These configuration forms work whether
+the client is already loaded or is loaded later. Upgrading users should add the
+appropriate form: loading `M2` no longer registers clients automatically.
 
 Open an `.m2` file and run `M-x eglot` or `M-x lsp`.
 The language server is supplied by M2's
