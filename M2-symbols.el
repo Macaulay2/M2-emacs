@@ -6,15 +6,6 @@
 ;; Keywords: languages
 ;; URL: https://github.com/Macaulay2/M2-emacs
 
-;;; Commentary:
-
-;; This file contains generated data describing Macaulay2 symbols.
-;;
-;; The variables defined here are used by Macaulay2 major modes to provide
-;; symbol completion and syntax highlighting.
-;;
-;; Auto-generated for Macaulay2-1.26.06. Do not modify this file manually.
-
 ;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -29,6 +20,15 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file contains generated data describing Macaulay2 symbols.
+;;
+;; The variables defined here are used by Macaulay2 major modes to provide
+;; symbol completion and syntax highlighting.
+;;
+;; Auto-generated for Macaulay2-1.26.06. Do not modify this file manually.
 
 ;;; Code:
 
