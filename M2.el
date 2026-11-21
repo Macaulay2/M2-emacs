@@ -1,4 +1,4 @@
-;;; M2.el --- Major mode for editing Macaulay2 source core -*- lexical-binding: t -*-
+;;; M2.el --- Major modes for editing Macaulay2 code and running sessions -*- lexical-binding: t -*-
 
 ;; Copyright (C) 1997-2026 The Macaulay2 Authors
 

@@ -3,7 +3,7 @@ Emacs Package for Macaulay2
 
 To get started with running Macaulay2 with Emacs, look at the file [`M2-emacs-help.txt`](M2-emacs-help.txt), which is a text version of the documentation node available via `help "running Macaulay2 in Emacs"`. To learn how to edit a file with Macaulay2 code in it using Emacs, see the file `M2-emacs.m2`, which is a text version of the documentation node available via `help "editing Macaulay2 code with Emacs"`.
 
-The files `M2.el` and `M2-mode.el` provide modes for editing Macaulay2 source in Emacs and running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`.
+`M2.el` provides `M2-mode`, for editing Macaulay2 source, and `M2-comint-mode`, for running a Macaulay2 session within an Emacs buffer. The syntax highlighting symbols are defined in `M2-symbols.el`. `M2-mode.el` is kept for compatibility with older configurations.
 
 After installation, `M-x M2` starts a session. Opening an `.m2` file selects
 `M2-mode` automatically, where F12 starts or switches to a session. To make F12
@@ -17,7 +17,7 @@ available in every buffer, add this to your Emacs configuration:
 
 ### Installing from a distribution package
 
-The Macaulay2 distribution packages typically install the M2-mode package somewhere in the `share/emacs/site-lisp` subdirectory of the installation prefix. For instance, on Ubuntu the package `elpa-macaulay2` is installed along with `macaulay2`, unless installing recommended packages is disabled. Therefore if Macaulay2 is installed from the distribution, this package already exists on your system.
+The Macaulay2 distribution packages typically install the M2 package somewhere in the `share/emacs/site-lisp` subdirectory of the installation prefix. For instance, on Ubuntu the package `elpa-macaulay2` is installed along with `macaulay2`, unless installing recommended packages is disabled. Therefore if Macaulay2 is installed from the distribution, this package already exists on your system.
 
 If Emacs doesn't automatically find the package, you may need to start M2 in a terminal and run:
 ```m2
@@ -43,7 +43,7 @@ works once the archive has been added.
 <!--
 ### Installing from MELPA
 
-Alternatively, for those who would like to install M2-mode without installing Macaulay2 itself, you can install this package from MELPA:
+Alternatively, for those who would like to install the M2 package without installing Macaulay2 itself, you can install this package from MELPA:
 
 1. Add the following to your Emacs init file (`~/.emacs`) to [enable the MELPA repository](https://melpa.org/#/getting-started):
 ```elisp
@@ -52,7 +52,7 @@ Alternatively, for those who would like to install M2-mode without installing Ma
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")))
 ```
 
-2. Press `M-x package-list-packages`, then find and install M2-mode.
+2. Press `M-x package-list-packages`, then find and install M2.
 -->
 
 ### Installing a package tarball
@@ -67,7 +67,7 @@ from the Actions tab to download the tarball as a workflow artifact.
 
 ### Installing with Emacs package managers
 
-The M2-mode package can be installed with a single line of code using several package managers.
+The M2 package can be installed with a single line of code using several package managers.
 
 #### use-package
 
@@ -103,7 +103,7 @@ git clone https://github.com/Macaulay2/M2-emacs.git ~/.emacs.d/site-lisp/Macaula
 2. Add the following to your Emacs init file:
 ```elisp
 (add-to-list 'load-path "~/.emacs.d/site-lisp/Macaulay2")
-(require 'M2-mode)
+(load "M2-init")
 ```
 
 Using this method, you can fetch the most recent version of the package by running `git pull` in the `~/.emacs.d/site-lisp/Macaulay2` directory.
@@ -193,7 +193,7 @@ A launcher outside `PATH` must itself locate the matching M2 executable; this
 is addressed by Macaulay2/M2#4453. If that fix is absent, ensure the matching M2
 bin directory is on the server process's `PATH` as well.
 
-## Why install M2-mode without Macaulay2?
+## Why install the M2 package without Macaulay2?
 
 Under certain circumstances, users who are unable to install Macaulay2 locally (e.g. the version provided by the university cluster is too old) can still use this package and choose an alternative method for running the Macaulay2 executable:
 
