@@ -23,13 +23,20 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Macaulay2 makes no attempt to wrap long output lines, so we provide
-;; functions that make horizontal scrolling easier.  In addition:
-;;    - run Macaulay2 as a command interpreter in an Emacs buffer
-;;    - provide a major mode used for editing Macaulay2 source files
-
-;;; TODO:
-;; Do we still wish to enable ansi-color-for-comint-mode?
+;; This package provides two major modes for Macaulay2:
+;;    - `M2-mode', for editing Macaulay2 source files
+;;    - `M2-comint-mode', for running Macaulay2 in an Emacs buffer, with
+;;      commands for scrolling its wide output horizontally
+;;
+;; Run `M-x M2' to start a session.  In an `M2-mode' buffer, F12 starts or
+;; switches to a session and F11 sends the current line or region to it.
+;; Press `C-h m' in either mode for the full list of key bindings.
+;;
+;; To use the Macaulay2 language server, call `M2-register-eglot' or
+;; `M2-register-lsp' from your configuration.
+;;
+;; See README.md, or `help "running Macaulay2 in Emacs"' in Macaulay2, for
+;; installation, configuration and a walkthrough.
 
 ;;; Code:
 
