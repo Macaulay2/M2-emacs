@@ -133,6 +133,11 @@ Using this method, you can fetch the most recent version of the package by runni
 
 ## Configuration
 
+All options are in the `M2` customization group (`M-x customize-group RET M2`).
+Those covered below are the most commonly changed; others include
+`M2-indent-level` (default 4) and `M2-blink-region-flag` and `M2-blink-delay`,
+which control the brief highlight of code sent to a session.
+
 For a local installation outside `PATH`, customize `M2-exe`, for example:
 
 ```elisp
