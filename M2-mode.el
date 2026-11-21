@@ -22,13 +22,14 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This file used to contain most of M2-mode definitions, which have since moved
-;; to M2.el.  This file remains for compatibility, or for new features.
+;; This file is kept for compatibility with configurations that load or
+;; require `M2-mode'.  It loads M2.el, which defines both Macaulay2 major
+;; modes.
+
+;;; Code:
 
 (unless (fboundp 'M2)
   (load "M2"))
-
-;;; Code:
 
 (provide 'M2-mode)
 
