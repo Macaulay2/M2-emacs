@@ -17,19 +17,19 @@ available in every buffer, add this to your Emacs configuration:
 
 The main key bindings are:
 
-| Key | Command | `.m2` buffers | Session buffer |
-|---|---|:---:|:---:|
-| F12 | Start or switch to a session | ✅ | ✅ |
-| F11 | Send the current line (or the active region, in `.m2` buffers) | ✅ | ✅ |
-| `C-RET` | Send the current line, or the region if active | ✅ |  |
-| `C-c C-j` / `C-c C-r` / `C-c C-b` / `C-c C-p` | Send the line / region / buffer / paragraph | ✅ |  |
-| `C-c C-<up>` / `C-c C-<down>` | Send from the start of the buffer to point / from point to the end | ✅ |  |
-| `C-c TAB`, `M-TAB` | Complete the symbol at point | ✅ | ✅ |
-| `TAB` | Complete the symbol at point |  | ✅ |
-| F10 / `M-F10` | Move to the next / previous bracketed input | ✅ | ✅ |
-| F2 or `C-c :` | Scroll horizontally to center point |  | ✅ |
-| F3 or `C-c <` / F4 or `C-c >` | Scroll left / right |  | ✅ |
-| `C-c C-t` | Toggle line truncation |  | ✅ |
+| Key                                           | Command                                                            | `.m2` buffers | Session buffer |
+|-----------------------------------------------|--------------------------------------------------------------------|:-------------:|:--------------:|
+| F12                                           | Start or switch to a session                                       | ✅            | ✅             |
+| F11                                           | Send the current line (or the active region, in `.m2` buffers)     | ✅            | ✅             |
+| `C-RET`                                       | Send the current line, or the region if active                     | ✅            |                |
+| `C-c C-j` / `C-c C-r` / `C-c C-b` / `C-c C-p` | Send the line / region / buffer / paragraph                        | ✅            |                |
+| `C-c C-<up>` / `C-c C-<down>`                 | Send from the start of the buffer to point / from point to the end | ✅            |                |
+| `C-c TAB`, `M-TAB`                            | Complete the symbol at point                                       | ✅            | ✅             |
+| `TAB`                                         | Complete the symbol at point                                       |               | ✅             |
+| F10 / `M-F10`                                 | Move to the next / previous bracketed input                        | ✅            | ✅             |
+| F2 or `C-c :`                                 | Scroll horizontally to center point                                |               | ✅             |
+| F3 or `C-c <` / F4 or `C-c >`                 | Scroll left / right                                                |               | ✅             |
+| `C-c C-t`                                     | Toggle line truncation                                             |               | ✅             |
 
 With a prefix argument, the send commands ask which session buffer to send to.
 Press `C-h m` in either mode for the full list of bindings, or use the
@@ -57,12 +57,12 @@ To give a demo:
    still type your own input at any point; F11 sends it as usual.
 5. Close the frame with `C-x 5 0` when you're done.
 
-| Key | Command | `.m2` buffers | Session buffer |
-|---|---|:---:|:---:|
-| `M-F11` | Make the current buffer the demo buffer | ✅ | ✅ |
-| F11 | On a blank input line, fetch the next line of the demo buffer; otherwise send the input | | ✅ |
-| `C-F11` | Switch to the demo buffer, for example to skip ahead or back | ✅ | ✅ |
-| `M-F12` | Open a frame with a large font for presenting | ✅ | ✅ |
+| Key     | Command                                                                                 | `.m2` buffers | Session buffer |
+|---------|-----------------------------------------------------------------------------------------|:-------------:|:--------------:|
+| `M-F11` | Make the current buffer the demo buffer                                                 | ✅            | ✅             |
+| F11     | On a blank input line, fetch the next line of the demo buffer; otherwise send the input |               | ✅             |
+| `C-F11` | Switch to the demo buffer, for example to skip ahead or back                            | ✅            | ✅             |
+| `M-F12` | Open a frame with a large font for presenting                                           | ✅            | ✅             |
 
 ## Installation
 
